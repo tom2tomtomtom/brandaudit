@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Audit Intelligence - Executive Summary</title>
+    <style>
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1a202c;
+            line-height: 1.6;
+        }
+        
+        .audit-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+        }
+        
+        /* Header Styles */
+        .audit-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
+            color: white;
+            padding: 80px 60px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .audit-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)" /></svg>');
+            opacity: 0.3;
+        }
+        
+        .audit-title {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .audit-subtitle {
+            font-size: 1.5rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .audit-meta {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-top: 40px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .meta-item {
+            text-align: center;
+        }
+        
+        .meta-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .meta-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+        
+        /* Competitor Landscape */
+        .landscape-section {
+            padding: 80px 60px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 50px;
+            color: #1e293b;
+        }
+        
+        .competitor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+        
+        .competitor-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .competitor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+        }
+        
+        .competitor-logo {
+            height: 60px;
+            width: auto;
+            max-width: 200px;
+            object-fit: contain;
+            margin-bottom: 25px;
+        }
+        
+        .competitor-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #1e293b;
+        }
+        
+        .competitor-tagline {
+            font-size: 1rem;
+            color: #64748b;
+            margin-bottom: 25px;
+            font-style: italic;
+            min-height: 40px;
+        }
+        
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .personality-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .personality-tag {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        /* Positioning Matrix */
+        .positioning-section {
+            padding: 80px 60px;
+            background: white;
+        }
+        
+        .positioning-matrix {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-radius: 20px;
+            margin: 40px 0;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .matrix-axes {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - 100px);
+            height: calc(100% - 100px);
+        }
+        
+        .axis-horizontal, .axis-vertical {
+            position: absolute;
+            background: #94a3b8;
+        }
+        
+        .axis-horizontal {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .axis-vertical {
+            height: 100%;
+            width: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .axis-label {
+            position: absolute;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+        
+        .axis-label.left { left: 20px; top: 50%; transform: translateY(-50%); }
+        .axis-label.right { right: 20px; top: 50%; transform: translateY(-50%); }
+        .axis-label.top { top: 20px; left: 50%; transform: translateX(-50%); }
+        .axis-label.bottom { bottom: 20px; left: 50%; transform: translateX(-50%); }
+        
+        .brand-dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .brand-dot::after {
+            content: attr(data-brand);
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .brand-dot:hover::after {
+            opacity: 1;
+        }
+        
+        /* Visual Evidence Gallery */
+        .gallery-section {
+            padding: 80px 60px;
+            background: #f8fafc;
+        }
+        
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .evidence-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .evidence-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .evidence-screenshot {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #e2e8f0;
+        }
+        
+        .evidence-info {
+            padding: 20px;
+        }
+        
+        .evidence-brand {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        
+        .evidence-description {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        
+        /* Insights Summary */
+        .insights-section {
+            padding: 80px 60px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .insight-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .insight-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #60a5fa;
+        }
+        
+        .insight-content {
+            font-size: 1rem;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        
+        /* Footer */
+        .audit-footer {
+            background: #0f172a;
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .footer-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .footer-subtitle {
+            opacity: 0.7;
+            margin-bottom: 20px;
+        }
+        
+        .footer-meta {
+            font-size: 0.9rem;
+            opacity: 0.5;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="audit-container">
+        
+        <div class="audit-header">
+            <h1 class="audit-title"> Brand Intelligence</h1>
+            <p class="audit-subtitle">Competitive Audit & Strategic Analysis</p>
+            <div class="audit-meta">
+                <div class="meta-item">
+                    <div class="meta-label">Analysis Period</div>
+                    <div class="meta-value">June 2025</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Intelligence Grade</div>
+                    <div class="meta-value">Executive</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Methodology</div>
+                    <div class="meta-value">McKinsey Framework</div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="landscape-section">
+            <h2 class="section-title">Competitive Landscape</h2>
+            <div class="competitor-grid">
+                
+            <div class="competitor-card">
+                <img src="data:image/svg+xml;base64,svg-logo" alt="Starbucks Coffee Company Logo" class="competitor-logo" 
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjQwIiB2aWV3Qm94PSIwIDAgMTAwIDQwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iNDAiIGZpbGw9IiNmMWY1ZjkiLz48dGV4dCB4PSI1MCIgeT0iMjQiIGZpbGw9IiM2NDc0OGIiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Mb2dvPC90ZXh0Pjwvc3ZnPg=='">
+                <h3 class="competitor-name">Starbucks Coffee Company</h3>
+                <p class="competitor-tagline">"More than just great coffee. Explore the menu, sign up for Starbucks® Rewards, manage your gift card..."</p>
+                <div class="color-palette"><div class="color-swatch" style="background-color: #fbf5e7;"></div><div class="color-swatch" style="background-color: #32462f;"></div><div class="color-swatch" style="background-color: #5f4633;"></div><div class="color-swatch" style="background-color: #32452f;"></div></div>
+                <div class="personality-tags"><span class="personality-tag">Confident</span><span class="personality-tag">Modern</span><span class="personality-tag">Trustworthy</span><span class="personality-tag">Innovative</span></div>
+            </div>
+            
+            </div>
+        </div>
+        
+        
+        <div class="positioning-section">
+            <h2 class="section-title">Strategic Positioning Matrix</h2>
+            <div class="positioning-matrix">
+                <div class="matrix-axes">
+                    <div class="axis-horizontal"></div>
+                    <div class="axis-vertical"></div>
+                </div>
+                <div class="axis-label left">Traditional</div>
+                <div class="axis-label right">Innovative</div>
+                <div class="axis-label top">Premium</div>
+                <div class="axis-label bottom">Mass Market</div>
+                
+            <div class="brand-dot" 
+                 style="left: 50.0%; top: 35.0%; background-color: #fbf5e7;" 
+                 data-brand="Starbucks Coffee Company">
+            </div>
+            
+            </div>
+        </div>
+        
+        
+        <div class="gallery-section">
+            <h2 class="section-title">Visual Evidence Gallery</h2>
+            <div class="evidence-grid">
+                
+            <div class="evidence-card">
+                <img src="{'screenshot_url': 'screenshot_placeholder_7268.png', 'visual_elements': ['Homepage layout', 'Navigation structure', 'Color scheme'], 'design_patterns': ['Modern', 'Clean', 'Responsive']}" alt="Starbucks Coffee Company Website" class="evidence-screenshot">
+                <div class="evidence-info">
+                    <div class="evidence-brand">Starbucks Coffee Company</div>
+                    <div class="evidence-description">Digital experience showcase</div>
+                </div>
+            </div>
+            
+            </div>
+        </div>
+        
+        
+        <div class="insights-section">
+            <h2 class="section-title">Strategic Insights</h2>
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <div class="insight-title">Market Dynamics</div>
+                    <div class="insight-content">Analysis of 1 key players reveals fragmented positioning with significant white space opportunities for differentiation.</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-title">Competitive Advantage</div>
+                    <div class="insight-content">Starbucks Coffee Company demonstrates strong visual identity and clear brand voice, positioning for premium market capture.</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-title">Strategic Recommendations</div>
+                    <div class="insight-content">Focus on digital experience optimization and brand personality amplification to maximize market share growth.</div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="audit-footer">
+            <div class="footer-title"> Brand Intelligence Platform</div>
+            <div class="footer-subtitle">McKinsey-Style Competitive Analysis & Strategic Intelligence</div>
+            <div class="footer-meta">Generated on 19/06/2025 • 15:50 • Confidential & Proprietary</div>
+        </div>
+        
+    </div>
+</body>
+</html>
