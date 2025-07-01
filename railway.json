@@ -1,27 +1,11 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
-  "services": [
-    {
-      "name": "backend",
-      "path": "backend",
-      "build": {
-        "builder": "DOCKERFILE",
-        "dockerfilePath": "Dockerfile"
-      },
-      "deploy": {
-        "startCommand": "gunicorn src.main:app"
-      }
-    },
-    {
-      "name": "frontend",
-      "path": "frontend",
-      "build": {
-        "builder": "DOCKERFILE",
-        "dockerfilePath": "Dockerfile"
-      },
-      "deploy": {
-        "startCommand": "nginx -g \"daemon off;\""
-      }
-    }
-  ]
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "frontend/Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "nginx -g 'daemon off;'",
+    "restartPolicyType": "ON_FAILURE"
+  }
 }
