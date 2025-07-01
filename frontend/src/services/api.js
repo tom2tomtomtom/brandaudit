@@ -1,5 +1,5 @@
 // API service for brand audit tool
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend-service-production-1b63.up.railway.app/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 class ApiService {
   constructor() {
