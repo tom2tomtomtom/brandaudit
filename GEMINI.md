@@ -63,9 +63,58 @@ This is the most critical phase. No code will be merged until it passes all veri
 
 ---
 
+## Railway Deployment
+
+This section outlines the steps for deploying the `brand-audit-app` to Railway.
+
+### 1. Railway CLI Installation
+
+Ensure you have the Railway CLI installed and authenticated:
+
+```bash
+curl -fsSL https://railway.app/install.sh | bash
+railway login
+```
+
+### 2. Project Setup on Railway
+
+Navigate to the root of your `brand-audit-app` project and initialize Railway:
+
+```bash
+railway init
+```
+
+Follow the prompts to link to an existing project or create a new one.
+
+### 3. Environment Variables
+
+Ensure all necessary environment variables (e.g., `OPENROUTER_API_KEY`, `NEWS_API_KEY`, `DATABASE_URL`, `SECRET_KEY`, `JWT_SECRET_KEY`) are configured on Railway. You can set them via the Railway dashboard or CLI:
+
+```bash
+railway env add VARIABLE_NAME=your_value
+```
+
+### 4. Deployment
+
+Deploy the application. Railway will automatically detect the `backend` (Python/Flask) and `frontend` (Node.js/Vite) services and deploy them.
+
+```bash
+railway up
+```
+
+### 5. Post-Deployment Verification
+
+After successful deployment, verify the application's functionality:
+
+- **Access Frontend**: Open the Railway-provided URL for your frontend service in a browser.
+- **Test Backend API**: Use `curl` or a tool like Postman to test backend API endpoints (e.g., `curl https://your-railway-backend-url.railway.app/api/health`).
+- **End-to-End Workflow**: Manually test the full user workflow (registration, login, analysis, report generation) on the deployed application.
+
+---
+
 ## Verification Commands
 
-The following commands must be run from their respective directories (`backend` or `frontend`) before creating a pull request.
+The following commands must be run from their respective directories (`backend` or `frontend`) before creating a pull request, and then adapted for post-deployment verification.
 
 ### Backend (`/brand-audit-app/backend`)
 
@@ -94,6 +143,5 @@ The following commands must be run from their respective directories (`backend` 
     ```
 2.  **Run Linter**:
     ```shell
-t
     pnpm lint
     ```

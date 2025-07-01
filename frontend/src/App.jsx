@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import HistoricalAnalysis from './components/HistoricalAnalysis'
 import useAuthStore from './store/useAuthStore'
+import useLoadingStore from './store/useLoadingStore'
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Input } from '@/components/ui/input.jsx'
@@ -60,18 +62,18 @@ function App() {
           <Routes>
             <Route path="/" element={
               <>
-                {renderStepIndicator()}
-                {currentStep === 1 && renderBrandInput()}
-                {currentStep === 2 && renderVisualAssets()}
-                {currentStep === 3 && renderAnalysisOptions()}
-                {currentStep === 4 && renderProcessing()}
-                {currentStep === 5 && renderResults()}
+                {/* renderStepIndicator() */}
+                {/* currentStep === 1 && renderBrandInput() */}
+                {/* currentStep === 2 && renderVisualAssets() */}
+                {/* currentStep === 3 && renderAnalysisOptions() */}
+                {/* currentStep === 4 && renderProcessing() */}
+                {/* currentStep === 5 && renderResults() */}
               </>
             } />
             <Route path="/historical-analysis" element={<HistoricalAnalysis />} />
-            {role === 'admin' && (
+            {/* role === 'admin' && (
               <Route path="/admin-dashboard" element={<div>Admin Dashboard Content (Coming Soon!)</div>} />
-            )}
+            ) */}
           </Routes>
         </main>
       </div>
@@ -80,4 +82,3 @@ function App() {
 }
 
 export default App
-

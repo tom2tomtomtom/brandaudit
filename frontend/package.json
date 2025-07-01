@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "test": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:staging": "netlify deploy --dir=dist --site=YOUR_STAGING_SITE_ID",
+    "deploy:production": "netlify deploy --prod --dir=dist --site=YOUR_PRODUCTION_SITE_ID"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
