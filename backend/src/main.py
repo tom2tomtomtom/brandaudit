@@ -28,7 +28,11 @@ from src.routes.status import status_bp
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Load environment variables
-load_dotenv()
+if os.environ.get('RAILWAY_ENVIRONMENT'):
+    # Load production environment file in Railway
+    load_dotenv('.env.production')
+else:
+    load_dotenv()
 
 
 def create_app(config_name=None):
@@ -196,6 +200,17 @@ def register_error_handlers(app):
 
 # Create application instance
 app = create_app()
+
+# Initialize database tables
+with app.app_context():
+    try:
+        db.create_all()
+        app.logger.info("Database tables created successfully")
+    except Exception as e:
+        app.logger.error(f"Database initialization failed: {e}")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=False)
 
 
 # Health check endpoint
