@@ -28,11 +28,14 @@ from src.routes.status import status_bp
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Load environment variables
-if os.environ.get('RAILWAY_ENVIRONMENT'):
-    # Load production environment file in Railway
-    load_dotenv('.env.production')
+# First load default .env
+load_dotenv()
+# Then load production overrides if in Railway
+if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('FLASK_ENV') == 'production':
+    load_dotenv('.env.production', override=True)
+    print(f"Loading production environment: RAILWAY_ENVIRONMENT={os.environ.get('RAILWAY_ENVIRONMENT')}")
 else:
-    load_dotenv()
+    print("Loading development environment")
 
 
 def create_app(config_name=None):
