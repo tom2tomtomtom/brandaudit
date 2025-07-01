@@ -30,15 +30,21 @@ COPY backend/app.py ./
 # Copy frontend build from previous stage
 COPY --from=frontend-builder /app/dist /usr/share/nginx/html
 
+# Remove default nginx config and create our own
+RUN rm -f /etc/nginx/sites-enabled/default
+
 # Create nginx config that serves frontend and proxies API to backend
 RUN echo 'server { \
-    listen 80; \
+    listen 80 default_server; \
     server_name _; \
     \
     # Serve frontend static files \
     location / { \
         root /usr/share/nginx/html; \
+        index index.html; \
         try_files $uri $uri/ /index.html; \
+        expires 1h; \
+        add_header Cache-Control "public, immutable"; \
     } \
     \
     # Proxy API requests to Python backend \
@@ -49,16 +55,27 @@ RUN echo 'server { \
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
         proxy_set_header X-Forwarded-Proto $scheme; \
         proxy_redirect off; \
+        proxy_buffering off; \
+        proxy_read_timeout 60s; \
+        proxy_connect_timeout 60s; \
     } \
-}' > /etc/nginx/sites-available/default
+}' > /etc/nginx/conf.d/default.conf
 
 # Create startup script that runs both services
 RUN echo '#!/bin/bash \
 set -e \
 echo "🚀 Starting AI Brand Audit Tool (Combined Frontend + Backend)..." \
+echo "📍 Testing Python app import..." \
+python -c "import app; print('\''✅ App imports successfully'\'')" \
 echo "📍 Starting Python backend on port 8000..." \
 python app.py & \
-sleep 2 \
+BACKEND_PID=$! \
+echo "📍 Backend started with PID: $BACKEND_PID" \
+sleep 5 \
+echo "📍 Testing backend health..." \
+curl -f http://127.0.0.1:8000/api/health || echo "⚠️ Backend health check failed" \
+echo "📍 Testing nginx config..." \
+nginx -t \
 echo "📍 Starting Nginx frontend on port 80..." \
 nginx -g "daemon off;"' > /start.sh && chmod +x /start.sh
 
