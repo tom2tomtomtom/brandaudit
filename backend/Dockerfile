@@ -22,9 +22,10 @@ ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
 ENV PORT=8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:$PORT/api/health || exit 1
+# Test app can start
+RUN python -c "from src.main import app; print('✅ App imports successfully')"
 
 EXPOSE $PORT
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$PORT src.main:app --workers 2 --timeout 120 --access-logfile - --error-logfile -"]
+
+# Use startup script for better debugging
+CMD ["python", "start.py"]
