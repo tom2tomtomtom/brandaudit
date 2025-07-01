@@ -37,9 +37,7 @@ else:
 
 def create_app(config_name=None):
     """Application factory pattern"""
-    app = Flask(
-        __name__, static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend", "dist"), static_url_path="/"
-    )
+    app = Flask(__name__)
 
     # Load configuration
     config_class = get_config(config_name)
@@ -227,9 +225,10 @@ def health_check():
 
 
 @app.route('/')
-def serve_index():
-    return send_from_directory(app.static_folder, 'index.html')
-
-@app.route('/assets/<path:filename>')
-def serve_assets(filename):
-    return send_from_directory(os.path.join(app.static_folder, 'assets'), filename)
+def root():
+    """Root endpoint - API status"""
+    return jsonify({
+        "message": "AI Brand Audit Tool API",
+        "version": app.config["APP_VERSION"],
+        "status": "running"
+    })
