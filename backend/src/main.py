@@ -91,9 +91,9 @@ def initialize_extensions(app):
     # CORS with secure configuration
     CORS(
         app,
-        origins=app.config["ALLOWED_ORIGINS"],
+        origins=["*"],  # Allow all origins for now to fix deployment
         supports_credentials=True,
-        allow_headers=["Content-Type", "Authorization"],
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     )
 
