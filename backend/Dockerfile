@@ -27,5 +27,5 @@ RUN python -c "import app; print('✅ Minimal app imports successfully')"
 
 EXPOSE $PORT
 
-# Use minimal app directly
-CMD ["python", "app.py"]
+# Use gunicorn for production
+CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:8000", "app:app"]
