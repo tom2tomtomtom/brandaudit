@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
-import apiService from '../services/api'
+// import apiService from '../services/api'
 import { toast } from 'sonner'
 import useLoadingStore from '../store/useLoadingStore'
 
@@ -13,23 +13,36 @@ const HistoricalAnalysis = () => {
   const { setLoading } = useLoadingStore()
 
   useEffect(() => {
-    const fetchAnalyses = async () => {
-      setLoading(true)
-      try {
-        const response = await apiService.getUserAnalyses()
-        if (response.success) {
-          setAnalyses(response.data.analyses)
-        } else {
-          toast.error('Failed to fetch historical analyses.')
+    // Mock data for demo purposes while backend is being fixed
+    const mockAnalyses = [
+      {
+        id: 1,
+        company_name: "Example Corp",
+        website: "example.com", 
+        status: "completed",
+        created_at: new Date().toISOString(),
+        results: {
+          brand_health_score: 85,
+          visual_analysis: { consistency_score: 78 },
+          overall_sentiment: "Positive"
         }
-      } catch (error) {
-        console.error('Error fetching historical analyses:', error)
-        toast.error('Error fetching historical analyses.')
-      } finally {
-        setLoading(false)
+      },
+      {
+        id: 2,
+        company_name: "Demo Inc",
+        website: "demo.com",
+        status: "pending", 
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        results: {
+          brand_health_score: 72,
+          visual_analysis: { consistency_score: 65 },
+          overall_sentiment: "Neutral"
+        }
       }
-    }
-    fetchAnalyses()
+    ]
+    
+    setAnalyses(mockAnalyses)
+    setLoading(false)
   }, [setLoading])
 
   const handleSelectAnalysis = (analysisId) => {
