@@ -61,14 +61,56 @@ function App() {
           <Toaster position="top-right" />
           <Routes>
             <Route path="/" element={
-              <>
-                {/* renderStepIndicator() */}
-                {/* currentStep === 1 && renderBrandInput() */}
-                {/* currentStep === 2 && renderVisualAssets() */}
-                {/* currentStep === 3 && renderAnalysisOptions() */}
-                {/* currentStep === 4 && renderProcessing() */}
-                {/* currentStep === 5 && renderResults() */}
-              </>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5" />
+                      Welcome to AI Brand Audit Tool
+                    </CardTitle>
+                    <CardDescription>
+                      Get comprehensive insights into your brand's visual identity and market positioning
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="p-6 text-center">
+                          <Search className="h-8 w-8 mx-auto mb-2 text-primary" />
+                          <h3 className="font-semibold mb-2">Brand Search</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Search and analyze any brand's digital presence
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-6 text-center">
+                          <Upload className="h-8 w-8 mx-auto mb-2 text-primary" />
+                          <h3 className="font-semibold mb-2">Asset Analysis</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Upload and analyze brand assets and logos
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-6 text-center">
+                          <BarChart3 className="h-8 w-8 mx-auto mb-2 text-primary" />
+                          <h3 className="font-semibold mb-2">AI Insights</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Get AI-powered recommendations and insights
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    <div className="mt-6 text-center">
+                      <Button className="mr-2">Start Brand Analysis</Button>
+                      <Button variant="outline">
+                        <Link to="/historical-analysis">View Past Analyses</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             } />
             <Route path="/historical-analysis" element={<HistoricalAnalysis />} />
             {/* role === 'admin' && (
