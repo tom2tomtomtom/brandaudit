@@ -22,10 +22,10 @@ ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
 ENV PORT=8000
 
-# Test app can start
-RUN python -c "from src.main import app; print('✅ App imports successfully')"
+# Test minimal app can start
+RUN python -c "import app; print('✅ Minimal app imports successfully')"
 
 EXPOSE $PORT
 
-# Use startup script for better debugging
-CMD ["python", "start.py"]
+# Use minimal app directly
+CMD ["python", "app.py"]
