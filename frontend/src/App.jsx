@@ -24,7 +24,7 @@ import {
   AlertCircle,
   Sparkles
 } from 'lucide-react'
-import apiService from './services/api.js'
+// import apiService from './services/api.js'
 import { Toaster, toast } from 'sonner'
 import './App.css'
 
