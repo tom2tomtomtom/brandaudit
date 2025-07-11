@@ -2,6 +2,7 @@ import requests
 import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+from .api_validation_service import api_validator
 
 
 class NewsService:
@@ -15,29 +16,33 @@ class NewsService:
 
     def search_news(self, query: str, days_back: int = 30, sources: Optional[str] = "") -> Dict:
         """Search for news articles about a brand"""
+        if not self.newsapi_key:
+            return {"success": False, "error": "NewsAPI key not configured. Cannot provide news data without real API access.", "articles": []}
+
         try:
             # Calculate date range
             to_date = datetime.now()
             from_date = to_date - timedelta(days=days_back)
 
-            if self.newsapi_key:
+            def search_operation():
                 return self._search_newsapi(query, from_date, to_date, sources)
-            else:
-                return self._get_mock_news_data(query, days_back)
+
+            # Use validation service with retry logic
+            return api_validator.execute_with_retry('newsapi', search_operation)
 
         except Exception as e:
-            return {"success": False, "error": str(e), "articles": []}
+            api_validator.log_api_usage('newsapi', 'search_news', False, None, str(e))
+            return {"success": False, "error": f"News search failed: {str(e)}. Cannot provide news data without real API access.", "articles": []}
 
     def get_financial_news(self, symbol: str, days_back: int = 30) -> Dict:
         """Get financial news for a specific stock symbol"""
-        try:
-            if self.eodhd_api_key:
-                return self._get_eodhd_news(symbol, days_back)
-            else:
-                return self._get_mock_financial_news(symbol, days_back)
+        if not self.eodhd_api_key:
+            return {"success": False, "error": "EODHD API key not configured. Cannot provide financial news without real API access.", "articles": []}
 
+        try:
+            return self._get_eodhd_news(symbol, days_back)
         except Exception as e:
-            return {"success": False, "error": str(e), "articles": []}
+            return {"success": False, "error": f"Financial news search failed: {str(e)}. Cannot provide financial news without real API access.", "articles": []}
 
     def analyze_news_sentiment(self, articles: List[Dict]) -> Dict:
         """Analyze sentiment of news articles"""
@@ -251,68 +256,6 @@ class NewsService:
             raise Exception(
                 f"EODHD API error: {response.status_code} - {response.text}"
             )
-
-    def _get_mock_news_data(self, query: str, days_back: int) -> Dict:
-        """Return mock news data when API key is not configured"""
-        mock_articles = [
-            {
-                "title": f"{query} Announces Major Product Launch",
-                "description": f"{query} has announced a significant new product that is expected to revolutionize the industry.",
-                "url": f"https://example.com/news/{query.lower()}-product-launch",
-                "source": {"name": "TechCrunch"},
-                "publishedAt": (datetime.now() - timedelta(days=2)).isoformat(),
-                "urlToImage": "https://via.placeholder.com/400x200/0066CC/FFFFFF?text=News+Image",
-            },
-            {
-                "title": f"{query} Reports Strong Quarterly Results",
-                "description": f"{query} has reported better than expected quarterly results, showing strong growth across all segments.",
-                "url": f"https://example.com/news/{query.lower()}-quarterly-results",
-                "source": {"name": "Forbes"},
-                "publishedAt": (datetime.now() - timedelta(days=5)).isoformat(),
-                "urlToImage": "https://via.placeholder.com/400x200/0066CC/FFFFFF?text=News+Image",
-            },
-            {
-                "title": f"{query} Expands Into New Markets",
-                "description": f"{query} is expanding its operations into several new international markets as part of its growth strategy.",
-                "url": f"https://example.com/news/{query.lower()}-market-expansion",
-                "source": {"name": "Business Insider"},
-                "publishedAt": (datetime.now() - timedelta(days=8)).isoformat(),
-                "urlToImage": "https://via.placeholder.com/400x200/0066CC/FFFFFF?text=News+Image",
-            },
-        ]
-
-        return {
-            "success": True,
-            "total_results": len(mock_articles),
-            "articles": mock_articles,
-        }
-
-    def _get_mock_financial_news(self, symbol: str, days_back: int) -> Dict:
-        """Return mock financial news data"""
-        mock_articles = [
-            {
-                "title": f"{symbol} Stock Reaches New High",
-                "description": f"{symbol} shares reached a new 52-week high following positive analyst reports.",
-                "url": f"https://example.com/finance/{symbol.lower()}-stock-high",
-                "source": "Financial Times",
-                "date": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d"),
-                "sentiment": "positive",
-            },
-            {
-                "title": f"{symbol} Beats Earnings Expectations",
-                "description": f"{symbol} reported earnings that exceeded analyst expectations for the quarter.",
-                "url": f"https://example.com/finance/{symbol.lower()}-earnings-beat",
-                "source": "Reuters",
-                "date": (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d"),
-                "sentiment": "positive",
-            },
-        ]
-
-        return {
-            "success": True,
-            "total_results": len(mock_articles),
-            "articles": mock_articles,
-        }
 
     def _determine_overall_sentiment(
         self, positive: int, negative: int, neutral: int

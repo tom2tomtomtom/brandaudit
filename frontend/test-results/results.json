@@ -1,0 +1,132 @@
+{
+  "config": {
+    "configFile": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/playwright.config.js",
+    "rootDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/e2e-tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "test-results/results.xml"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      },
+      {
+        "outputDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {},
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      },
+      {
+        "outputDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {},
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      },
+      {
+        "outputDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {},
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      },
+      {
+        "outputDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {},
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "/Users/thomasdowuona-hyde/brand-audit-app/frontend/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.53.2",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Process from config.webServer was not able to start. Exit code: 127",
+      "stack": "Error: Process from config.webServer was not able to start. Exit code: 127"
+    }
+  ],
+  "stats": {
+    "startTime": "2025-07-07T10:15:03.223Z",
+    "duration": 375.7940000000001,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

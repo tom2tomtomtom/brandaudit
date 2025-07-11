@@ -1,12 +1,12 @@
 FROM node:20-alpine as builder
 WORKDIR /app
 
-# Copy frontend package files
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
 RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
-# Copy frontend source
-COPY frontend/ ./
+# Copy source
+COPY . ./
 RUN pnpm build
 
 FROM nginx:alpine

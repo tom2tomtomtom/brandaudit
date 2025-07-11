@@ -19,10 +19,18 @@ from src.celery_app import make_celery
 from src.extensions import cache
 from src.config import get_config
 from src.extensions import db
+from src.services.database_optimization_service import db_optimizer
 from src.routes.user import user_bp
 from src.routes.brand_audit import brand_audit_bp
 from src.routes.auth import auth_bp
 from src.routes.status import status_bp
+from src.routes.monitoring import monitoring_bp
+
+# Import error handling services
+from src.services.error_management_service import error_manager
+from src.services.monitoring_service import monitoring_service
+from src.services.enhanced_retry_service import enhanced_retry_service
+from src.services.fallback_service import fallback_service
 
 # Add src directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -80,7 +88,8 @@ def configure_logging(app):
 
 def initialize_extensions(app):
     """Initialize Flask extensions"""
-    # Database
+    # Database with optimization
+    db_optimizer.optimize_database_connection(app)
     db.init_app(app)
 
     # Initialize Cache
@@ -142,6 +151,7 @@ def register_blueprints(app):
     app.register_blueprint(user_bp, url_prefix="/api")
     app.register_blueprint(brand_audit_bp, url_prefix="/api")
     app.register_blueprint(status_bp, url_prefix="/api")
+    app.register_blueprint(monitoring_bp)
 
 
 def register_error_handlers(app):
@@ -189,12 +199,28 @@ def register_error_handlers(app):
     @app.errorhandler(500)
     def internal_error(error):
         app.logger.error(f"Server Error: {error}")
-        return jsonify(
-            {
+
+        # Use enhanced error management
+        from src.services.error_management_service import ErrorContext, error_manager
+        context = ErrorContext(
+            operation="flask_error_handler",
+            additional_context={"error_type": "500_internal_server_error"}
+        )
+
+        try:
+            error_info = error_manager.handle_error(error, context, "internal_server_error")
+            return jsonify({
+                "success": False,
+                "error": error_info.user_message,
+                "error_id": error_info.error_id,
+                "user_actions": error_info.user_actions
+            }), 500
+        except:
+            # Fallback to basic error response
+            return jsonify({
                 "error": "Internal server error",
                 "message": "An unexpected error occurred",
-            }
-        ), 500
+            }), 500
 
 
 # Create application instance

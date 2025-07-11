@@ -1,6 +1,7 @@
 import requests
 import os
 from typing import Dict, List
+from .api_validation_service import api_validator
 
 
 class BrandDataService:
@@ -14,36 +15,39 @@ class BrandDataService:
 
     def get_brand_assets(self, domain: str) -> Dict:
         """Get brand assets from Brandfetch API"""
+        if not self.brandfetch_api_key:
+            return {"success": False, "error": "BrandFetch API key not configured. Cannot provide brand assets without real API access.", "data": None}
+
         try:
-            if self.brandfetch_api_key:
+            def fetch_operation():
                 return self._fetch_brandfetch_data(domain)
-            else:
-                return self._get_mock_brand_assets(domain)
+
+            # Use validation service with retry logic
+            return api_validator.execute_with_retry('brandfetch', fetch_operation)
 
         except Exception as e:
-            return {"success": False, "error": str(e), "data": None}
+            api_validator.log_api_usage('brandfetch', 'get_brand_assets', False, None, str(e))
+            return {"success": False, "error": f"Brand assets fetch failed: {str(e)}. Cannot provide brand assets without real API access.", "data": None}
 
     def get_company_info(self, company_name: str) -> Dict:
         """Get company information from OpenCorporates API"""
-        try:
-            if self.opencorporates_api_key:
-                return self._fetch_opencorporates_data(company_name)
-            else:
-                return self._get_mock_company_info(company_name)
+        if not self.opencorporates_api_key:
+            return {"success": False, "error": "OpenCorporates API key not configured. Cannot provide company information without real API access.", "data": None}
 
+        try:
+            return self._fetch_opencorporates_data(company_name)
         except Exception as e:
-            return {"success": False, "error": str(e), "data": None}
+            return {"success": False, "error": f"Company info fetch failed: {str(e)}. Cannot provide company information without real API access.", "data": None}
 
     def search_companies(self, query: str, limit: int = 10) -> Dict:
         """Search for companies by name"""
-        try:
-            if self.opencorporates_api_key:
-                return self._search_opencorporates(query, limit)
-            else:
-                return self._get_mock_company_search(query, limit)
+        if not self.opencorporates_api_key:
+            return {"success": False, "error": "OpenCorporates API key not configured. Cannot search companies without real API access.", "companies": []}
 
+        try:
+            return self._search_opencorporates(query, limit)
         except Exception as e:
-            return {"success": False, "error": str(e), "companies": []}
+            return {"success": False, "error": f"Company search failed: {str(e)}. Cannot search companies without real API access.", "companies": []}
 
     def analyze_brand_consistency(self, brand_assets: Dict) -> Dict:
         """Analyze brand consistency from assets"""
@@ -185,114 +189,6 @@ class BrandDataService:
             raise Exception(
                 f"OpenCorporates API error: {response.status_code} - {response.text}"
             )
-
-    def _get_mock_brand_assets(self, domain: str) -> Dict:
-        """Return mock brand assets data"""
-        return {
-            "success": True,
-            "data": {
-                "name": domain.replace(".com", "").title(),
-                "domain": domain,
-                "logos": [
-                    {
-                        "type": "logo",
-                        "theme": "light",
-                        "formats": [
-                            {
-                                "format": "png",
-                                "src": f"https://via.placeholder.com/200x100/0066CC/FFFFFF?text={domain.split('.')[0].upper()}",
-                                "background": "transparent",
-                                "size": 5120,
-                            }
-                        ],
-                    },
-                    {
-                        "type": "symbol",
-                        "theme": "light",
-                        "formats": [
-                            {
-                                "format": "png",
-                                "src": f"https://via.placeholder.com/100x100/0066CC/FFFFFF?text={domain.split('.')[0][0].upper()}",
-                                "background": "transparent",
-                                "size": 2048,
-                            }
-                        ],
-                    },
-                ],
-                "colors": [
-                    {"hex": "#0066CC", "type": "brand", "brightness": 128},
-                    {"hex": "#FFFFFF", "type": "accent", "brightness": 255},
-                    {"hex": "#333333", "type": "dark", "brightness": 51},
-                ],
-                "fonts": [
-                    {"name": "Arial", "type": "sans-serif", "origin": "system"},
-                    {"name": "Helvetica", "type": "sans-serif", "origin": "system"},
-                ],
-                "images": [
-                    {
-                        "type": "banner",
-                        "formats": [
-                            {
-                                "format": "jpg",
-                                "src": f"https://via.placeholder.com/1200x400/0066CC/FFFFFF?text={domain.split('.')[0].upper()}+Banner",
-                                "size": 15360,
-                            }
-                        ],
-                    }
-                ],
-            },
-        }
-
-    def _get_mock_company_info(self, company_name: str) -> Dict:
-        """Return mock company information"""
-        return {
-            "success": True,
-            "data": {
-                "name": company_name,
-                "company_number": "C123456789",
-                "jurisdiction_code": "us_de",
-                "incorporation_date": "2010-01-15",
-                "company_type": "Corporation",
-                "status": "Active",
-                "registered_address": {
-                    "street_address": "123 Business St",
-                    "locality": "San Francisco",
-                    "region": "CA",
-                    "postal_code": "94105",
-                    "country": "United States",
-                },
-                "officers": [
-                    {
-                        "name": "John Smith",
-                        "position": "CEO",
-                        "start_date": "2010-01-15",
-                    },
-                    {"name": "Jane Doe", "position": "CFO", "start_date": "2012-03-01"},
-                ],
-                "industry_codes": [
-                    {
-                        "code": "541511",
-                        "description": "Custom Computer Programming Services",
-                    }
-                ],
-            },
-        }
-
-    def _get_mock_company_search(self, query: str, limit: int) -> Dict:
-        """Return mock company search results"""
-        companies = []
-        for i in range(min(limit, 3)):
-            companies.append(
-                {
-                    "name": f"{query} {['Inc', 'Corp', 'LLC'][i]}",
-                    "company_number": f"C{123456789 + i}",
-                    "jurisdiction_code": "us_de",
-                    "incorporation_date": f"201{i}-01-15",
-                    "status": "Active",
-                }
-            )
-
-        return {"success": True, "companies": companies}
 
     def _analyze_logo_consistency(self, logos: List[Dict]) -> Dict:
         """Analyze logo consistency"""

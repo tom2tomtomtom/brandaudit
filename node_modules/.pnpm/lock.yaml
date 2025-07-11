@@ -1,0 +1,43 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      playwright:
+        specifier: ^1.53.2
+        version: 1.53.2
+
+packages:
+
+  fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+
+  playwright-core@1.53.2:
+    resolution: {integrity: sha512-ox/OytMy+2w1jcYEYlOo1Hhp8hZkLCximMTUTMBXjGUA1KoFfiSZ+DU+3a739jsPY0yoKH2TFy9S2fsJas8yAw==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.53.2:
+    resolution: {integrity: sha512-6K/qQxVFuVQhRQhFsVZ9fGeatxirtrpPgxzBYWyZLEXJzqYwuL4fuNmfOfD5et1tJE4GScKyPNeLhZeRwuTU3A==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+snapshots:
+
+  fsevents@2.3.2:
+    optional: true
+
+  playwright-core@1.53.2: {}
+
+  playwright@1.53.2:
+    dependencies:
+      playwright-core: 1.53.2
+    optionalDependencies:
+      fsevents: 2.3.2

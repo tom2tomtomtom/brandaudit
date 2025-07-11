@@ -61,6 +61,7 @@ class AnalysisRequestSchema(Schema):
                     "brandPerception",
                     "competitiveAnalysis",
                     "visualConsistency",
+                    "visualAnalysis",  # NEW: Enhanced visual analysis with color extraction
                     "pressCoverage",
                     "socialSentiment",
                 ]
