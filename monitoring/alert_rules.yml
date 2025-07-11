@@ -1,0 +1,244 @@
+# Prometheus Alert Rules for AI Brand Audit Tool
+# Defines alerting conditions for application and infrastructure monitoring
+
+groups:
+  # Application Health Alerts
+  - name: brand_audit_health
+    rules:
+      - alert: ApplicationDown
+        expr: up{job="brand-audit-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: brand-audit
+        annotations:
+          summary: "Brand Audit application is down"
+          description: "The Brand Audit backend service has been down for more than 1 minute."
+
+      - alert: HealthCheckFailing
+        expr: brand_audit_health_status != 1
+        for: 2m
+        labels:
+          severity: warning
+          service: brand-audit
+        annotations:
+          summary: "Application health check failing"
+          description: "Brand Audit application health check has been failing for more than 2 minutes."
+
+      - alert: HighErrorRate
+        expr: rate(brand_audit_http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: brand-audit
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second over the last 5 minutes."
+
+      - alert: SlowResponseTime
+        expr: brand_audit_http_request_duration_seconds{quantile="0.95"} > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: brand-audit
+        annotations:
+          summary: "Slow response times detected"
+          description: "95th percentile response time is {{ $value }} seconds."
+
+  # Database Alerts
+  - name: brand_audit_database
+    rules:
+      - alert: DatabaseConnectionPoolExhausted
+        expr: brand_audit_db_pool_active_connections / brand_audit_db_pool_size > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Database connection pool utilization is {{ $value | humanizePercentage }}."
+
+      - alert: DatabaseSlowQueries
+        expr: brand_audit_db_query_duration_seconds{quantile="0.95"} > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile database query time is {{ $value }} seconds."
+
+      - alert: DatabaseConnectionErrors
+        expr: rate(brand_audit_db_connection_errors_total[5m]) > 0.01
+        for: 3m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Database connection errors"
+          description: "Database connection error rate is {{ $value }} errors per second."
+
+      - alert: PostgreSQLDown
+        expr: up{job="postgresql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 1 minute."
+
+  # Resource Usage Alerts
+  - name: brand_audit_resources
+    rules:
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name=~"brand_audit_.*"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "Container {{ $labels.name }} CPU usage is {{ $value }}%."
+
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes{name=~"brand_audit_.*"} / container_spec_memory_limit_bytes) * 100 > 85
+        for: 3m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Container {{ $labels.name }} memory usage is {{ $value }}%."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value }}% full."
+
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 5
+        for: 1m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: "Critical disk space"
+          description: "Disk space is {{ $value }}% full. Immediate action required."
+
+  # API Performance Alerts
+  - name: brand_audit_api
+    rules:
+      - alert: HighRequestRate
+        expr: rate(brand_audit_http_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: info
+          service: api
+        annotations:
+          summary: "High request rate"
+          description: "API request rate is {{ $value }} requests per second."
+
+      - alert: APIEndpointDown
+        expr: brand_audit_endpoint_up{endpoint="/api/health"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Critical API endpoint down"
+          description: "Health check endpoint is not responding."
+
+      - alert: BrandAnalysisTimeout
+        expr: rate(brand_audit_analysis_timeouts_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Brand analysis timeouts"
+          description: "Brand analysis timeout rate is {{ $value }} per second."
+
+  # External Dependencies Alerts
+  - name: brand_audit_external
+    rules:
+      - alert: ExternalAPIFailure
+        expr: rate(brand_audit_external_api_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: external
+        annotations:
+          summary: "External API failures"
+          description: "External API error rate is {{ $value }} errors per second for {{ $labels.api }}."
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache service has been down for more than 1 minute."
+
+      - alert: CeleryWorkerDown
+        expr: brand_audit_celery_workers_active == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: background
+        annotations:
+          summary: "No active Celery workers"
+          description: "All Celery background workers are down."
+
+  # Security Alerts
+  - name: brand_audit_security
+    rules:
+      - alert: UnauthorizedAccess
+        expr: rate(brand_audit_http_requests_total{status="401"}[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "High rate of unauthorized access attempts"
+          description: "Unauthorized access attempt rate is {{ $value }} per second."
+
+      - alert: RateLimitExceeded
+        expr: rate(brand_audit_rate_limit_exceeded_total[5m]) > 1
+        for: 1m
+        labels:
+          severity: info
+          service: security
+        annotations:
+          summary: "Rate limit frequently exceeded"
+          description: "Rate limit exceeded {{ $value }} times per second."
+
+  # Business Logic Alerts
+  - name: brand_audit_business
+    rules:
+      - alert: LowAnalysisSuccessRate
+        expr: (rate(brand_audit_analysis_success_total[10m]) / rate(brand_audit_analysis_total[10m])) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: business
+        annotations:
+          summary: "Low brand analysis success rate"
+          description: "Brand analysis success rate is {{ $value | humanizePercentage }} over the last 10 minutes."
+
+      - alert: NoAnalysisRequests
+        expr: rate(brand_audit_analysis_total[30m]) == 0
+        for: 30m
+        labels:
+          severity: info
+          service: business
+        annotations:
+          summary: "No brand analysis requests"
+          description: "No brand analysis requests received in the last 30 minutes."

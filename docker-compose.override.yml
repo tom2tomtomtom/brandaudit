@@ -1,0 +1,86 @@
+# Development Docker Compose Override
+# This file is automatically loaded by docker-compose for development
+# Use: docker-compose up (automatically includes this file)
+# For production: docker-compose -f docker-compose.yml up
+
+version: '3.8'
+
+services:
+  # Development overrides for backend
+  backend:
+    build:
+      dockerfile: backend/Dockerfile
+      target: base  # Use base stage for development
+    environment:
+      - FLASK_ENV=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      # Mount source code for hot reloading
+      - ./backend:/app
+      - /app/__pycache__
+    command: python app.py
+    ports:
+      - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # Development overrides for frontend
+  frontend:
+    build:
+      dockerfile: Dockerfile.dev
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reloading
+      - ./frontend:/app
+      - /app/node_modules
+    command: pnpm dev --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # Simplified nginx for development
+  nginx:
+    volumes:
+      - ./docker-nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "3000:80"
+
+  # Development database with exposed port
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=brandaudit_dev
+      - POSTGRES_USER=dev_user
+      - POSTGRES_PASSWORD=dev_password
+
+  # Development Redis with exposed port
+  redis:
+    ports:
+      - "6379:6379"
+
+  # Disable background services in development
+  worker:
+    profiles:
+      - background
+
+  scheduler:
+    profiles:
+      - background
+
+  # Enable monitoring by default in development
+  prometheus:
+    profiles:
+      - default
+
+  grafana:
+    profiles:
+      - default

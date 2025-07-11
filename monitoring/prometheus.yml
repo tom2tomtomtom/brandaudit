@@ -1,0 +1,120 @@
+# Prometheus Configuration for AI Brand Audit Tool
+# Monitors application health, performance, and infrastructure metrics
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'brand-audit-monitor'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "alert_rules.yml"
+  - "recording_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Application backend monitoring
+  - job_name: 'brand-audit-backend'
+    static_configs:
+      - targets: ['backend:8080']
+    scrape_interval: 15s
+    metrics_path: /api/metrics
+    scrape_timeout: 10s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # Application health checks
+  - job_name: 'brand-audit-health'
+    static_configs:
+      - targets: ['backend:8080']
+    scrape_interval: 30s
+    metrics_path: /api/health/metrics
+    scrape_timeout: 5s
+
+  # Database monitoring
+  - job_name: 'brand-audit-database'
+    static_configs:
+      - targets: ['backend:8080']
+    scrape_interval: 30s
+    metrics_path: /api/database/metrics
+    scrape_timeout: 10s
+
+  # Nginx monitoring (if nginx-prometheus-exporter is enabled)
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:9113']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 5s
+
+  # PostgreSQL monitoring (if postgres_exporter is enabled)
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Redis monitoring (if redis_exporter is enabled)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 5s
+
+  # Node/Container monitoring (if node_exporter is enabled)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Docker container monitoring (if cadvisor is enabled)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Custom application metrics
+  - job_name: 'brand-audit-custom'
+    static_configs:
+      - targets: ['backend:8080']
+    scrape_interval: 60s
+    metrics_path: /api/custom-metrics
+    scrape_timeout: 15s
+    honor_labels: true
+
+# Remote write configuration (for external monitoring services)
+# remote_write:
+#   - url: "https://your-remote-prometheus-endpoint/api/v1/write"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-password"
+
+# Remote read configuration (for external monitoring services)
+# remote_read:
+#   - url: "https://your-remote-prometheus-endpoint/api/v1/read"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-password"

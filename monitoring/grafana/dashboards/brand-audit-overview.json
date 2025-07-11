@@ -1,0 +1,287 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "AI Brand Audit Tool - Overview",
+    "tags": ["brand-audit", "overview"],
+    "style": "dark",
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Application Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"brand-audit-backend\"}",
+            "legendFormat": "Backend Status"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            },
+            "mappings": [
+              {"options": {"0": {"text": "DOWN"}}, "type": "value"},
+              {"options": {"1": {"text": "UP"}}, "type": "value"}
+            ]
+          }
+        },
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Request Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(brand_audit_http_requests_total[5m])",
+            "legendFormat": "Requests/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Error Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(brand_audit_http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "Errors/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 0.1},
+                {"color": "red", "value": 1}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Response Time (95th percentile)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "brand_audit_http_request_duration_seconds{quantile=\"0.95\"}",
+            "legendFormat": "95th percentile"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 1},
+                {"color": "red", "value": 5}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "HTTP Requests Over Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(brand_audit_http_requests_total[5m])",
+            "legendFormat": "{{method}} {{status}}"
+          }
+        ],
+        "yAxes": [
+          {"label": "Requests/sec", "min": 0},
+          {"show": false}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+      },
+      {
+        "id": 6,
+        "title": "Response Time Distribution",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "brand_audit_http_request_duration_seconds{quantile=\"0.50\"}",
+            "legendFormat": "50th percentile"
+          },
+          {
+            "expr": "brand_audit_http_request_duration_seconds{quantile=\"0.95\"}",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "brand_audit_http_request_duration_seconds{quantile=\"0.99\"}",
+            "legendFormat": "99th percentile"
+          }
+        ],
+        "yAxes": [
+          {"label": "Seconds", "min": 0},
+          {"show": false}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+      },
+      {
+        "id": 7,
+        "title": "Database Connection Pool",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "brand_audit_db_pool_active_connections",
+            "legendFormat": "Active Connections"
+          },
+          {
+            "expr": "brand_audit_db_pool_idle_connections",
+            "legendFormat": "Idle Connections"
+          },
+          {
+            "expr": "brand_audit_db_pool_size",
+            "legendFormat": "Pool Size"
+          }
+        ],
+        "yAxes": [
+          {"label": "Connections", "min": 0},
+          {"show": false}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+      },
+      {
+        "id": 8,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{name=~\"brand_audit_.*\"} / 1024 / 1024",
+            "legendFormat": "{{name}}"
+          }
+        ],
+        "yAxes": [
+          {"label": "MB", "min": 0},
+          {"show": false}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+      },
+      {
+        "id": 9,
+        "title": "Brand Analysis Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(brand_audit_analysis_total[5m])",
+            "legendFormat": "Analysis Requests/sec"
+          },
+          {
+            "expr": "rate(brand_audit_analysis_success_total[5m])",
+            "legendFormat": "Successful Analyses/sec"
+          },
+          {
+            "expr": "rate(brand_audit_analysis_errors_total[5m])",
+            "legendFormat": "Analysis Errors/sec"
+          }
+        ],
+        "yAxes": [
+          {"label": "Rate", "min": 0},
+          {"show": false}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20}
+      },
+      {
+        "id": 10,
+        "title": "External API Status",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "brand_audit_external_api_up",
+            "legendFormat": "{{api}}",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true, "__name__": true, "job": true, "instance": true},
+              "renameByName": {"api": "API Service", "Value": "Status"}
+            }
+          }
+        ],
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Status"},
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {"options": {"0": {"text": "DOWN", "color": "red"}}, "type": "value"},
+                    {"options": {"1": {"text": "UP", "color": "green"}}, "type": "value"}
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20}
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(up{job=\"brand-audit-backend\"}, instance)",
+          "refresh": 1,
+          "includeAll": true,
+          "allValue": ".*"
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "changes(brand_audit_build_info[1h]) > 0",
+          "titleFormat": "Deployment",
+          "textFormat": "New version deployed"
+        }
+      ]
+    }
+  }
+}

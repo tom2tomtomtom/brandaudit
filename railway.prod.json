@@ -64,9 +64,7 @@
       }
     }
   },
-  "regions": [
-    "us-west1"
-  ],
+  "regions": ["us-west1"],
   "plugins": [
     {
       "name": "postgresql",
