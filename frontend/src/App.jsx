@@ -5,6 +5,8 @@ import FullConsultingReport from './components/FullConsultingReport'
 import ModernLanding from './components/ModernLanding'
 import AnalysisProgress from './components/AnalysisProgress'
 import StrategicIntelligenceBriefing from './components/StrategicIntelligenceBriefing'
+import AdvancedAnalyticsDashboard from './components/analytics/AdvancedAnalyticsDashboard'
+import AnalyticsTest from './components/analytics/AnalyticsTest'
 import useAuthStore from './store/useAuthStore'
 import useLoadingStore from './store/useLoadingStore'
 import { Button } from '@/components/ui/button.jsx'
@@ -153,6 +155,25 @@ function App() {
         <Routes>
           <Route path="/" element={renderCurrentView()} />
           <Route path="/historical-analysis" element={<HistoricalAnalysis />} />
+          <Route path="/analytics" element={
+            <div className="min-h-screen bg-gray-50 py-8">
+              <div className="max-w-7xl mx-auto px-4">
+                <AdvancedAnalyticsDashboard
+                  analysisResults={analysisResults}
+                  brandName={brandQuery}
+                  historicalData={[]}
+                  competitorData={[]}
+                  onExport={(format, data) => console.log('Export:', format, data)}
+                  onRefresh={() => console.log('Refresh analytics')}
+                />
+              </div>
+            </div>
+          } />
+          <Route path="/analytics-test" element={
+            <div className="min-h-screen bg-gray-50">
+              <AnalyticsTest />
+            </div>
+          } />
         </Routes>
       </div>
     </BrowserRouter>

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, memo, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { usePerformanceOptimization, useIntersectionObserver } from '../hooks/usePerformanceOptimization'
 import OptimizedImageDisplay from './OptimizedImageDisplay'
 import PerformanceMonitor from './PerformanceMonitor'
@@ -482,6 +483,12 @@ const StrategicIntelligenceBriefing = ({ analysisResults, brandName, onNewAnalys
             <Download className="h-4 w-4 mr-2" />
             Download Briefing
           </Button>
+          <Link to="/analytics">
+            <Button variant="outline">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics Dashboard
+            </Button>
+          </Link>
           <Button onClick={onNewAnalysis}>
             <ArrowRight className="h-4 w-4 mr-2" />
             New Analysis

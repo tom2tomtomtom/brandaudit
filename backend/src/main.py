@@ -25,6 +25,7 @@ from src.routes.brand_audit import brand_audit_bp
 from src.routes.auth import auth_bp
 from src.routes.status import status_bp
 from src.routes.monitoring import monitoring_bp
+from src.routes.analytics import analytics_bp
 
 # Import error handling services
 from src.services.error_management_service import error_manager
@@ -150,6 +151,7 @@ def register_blueprints(app):
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(user_bp, url_prefix="/api")
     app.register_blueprint(brand_audit_bp, url_prefix="/api")
+    app.register_blueprint(analytics_bp)
     app.register_blueprint(status_bp, url_prefix="/api")
     app.register_blueprint(monitoring_bp)
 

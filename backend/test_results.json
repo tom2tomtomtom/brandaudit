@@ -1,0 +1,125 @@
+{
+  "timestamp": "2025-07-11T20:00:36.091962",
+  "results": [
+    {
+      "template": "executive_summary",
+      "theme": "corporate_blue",
+      "success": true,
+      "reports_count": 2,
+      "charts_count": 5,
+      "errors_count": 1
+    },
+    {
+      "template": "executive_summary",
+      "theme": "modern_minimal",
+      "success": true,
+      "reports_count": 2,
+      "charts_count": 5,
+      "errors_count": 1
+    },
+    {
+      "template": "executive_summary",
+      "theme": "consulting_premium",
+      "success": true,
+      "reports_count": 2,
+      "charts_count": 5,
+      "errors_count": 1
+    },
+    {
+      "template": "detailed_analysis",
+      "theme": "corporate_blue",
+      "success": true,
+      "reports_count": 3,
+      "charts_count": 5,
+      "errors_count": 0
+    },
+    {
+      "template": "detailed_analysis",
+      "theme": "modern_minimal",
+      "success": true,
+      "reports_count": 3,
+      "charts_count": 5,
+      "errors_count": 0
+    },
+    {
+      "template": "detailed_analysis",
+      "theme": "consulting_premium",
+      "success": true,
+      "reports_count": 3,
+      "charts_count": 5,
+      "errors_count": 0
+    },
+    {
+      "template": "presentation_deck",
+      "theme": "corporate_blue",
+      "success": true,
+      "reports_count": 2,
+      "charts_count": 5,
+      "errors_count": 1
+    },
+    {
+      "template": "presentation_deck",
+      "theme": "modern_minimal",
+      "success": true,
+      "reports_count": 2,
+      "charts_count": 5,
+      "errors_count": 1
+    },
+    {
+      "template": "presentation_deck",
+      "theme": "consulting_premium",
+      "success": true,
+      "reports_count": 2,
+      "charts_count": 5,
+      "errors_count": 1
+    },
+    {
+      "template": "consulting_report",
+      "theme": "corporate_blue",
+      "success": true,
+      "reports_count": 3,
+      "charts_count": 5,
+      "errors_count": 0
+    },
+    {
+      "template": "consulting_report",
+      "theme": "modern_minimal",
+      "success": true,
+      "reports_count": 3,
+      "charts_count": 5,
+      "errors_count": 0
+    },
+    {
+      "template": "consulting_report",
+      "theme": "consulting_premium",
+      "success": true,
+      "reports_count": 3,
+      "charts_count": 5,
+      "errors_count": 0
+    },
+    {
+      "template": "strategic_brief",
+      "theme": "corporate_blue",
+      "success": true,
+      "reports_count": 3,
+      "charts_count": 5,
+      "errors_count": 0
+    },
+    {
+      "template": "strategic_brief",
+      "theme": "modern_minimal",
+      "success": true,
+      "reports_count": 3,
+      "charts_count": 5,
+      "errors_count": 0
+    },
+    {
+      "template": "strategic_brief",
+      "theme": "consulting_premium",
+      "success": true,
+      "reports_count": 3,
+      "charts_count": 5,
+      "errors_count": 0
+    }
+  ]
+}
