@@ -2,6 +2,7 @@ import React, { useState, useMemo, memo, useCallback } from 'react'
 import { usePerformanceOptimization, useIntersectionObserver } from '../hooks/usePerformanceOptimization'
 import OptimizedImageDisplay from './OptimizedImageDisplay'
 import PerformanceMonitor from './PerformanceMonitor'
+import ReportGenerator from './ReportGenerator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
@@ -28,7 +29,8 @@ import {
   Eye,
   Shield,
   Rocket,
-  Award
+  Award,
+  FileText
 } from 'lucide-react'
 
 const StrategicIntelligenceBriefing = ({ analysisResults, brandName, onNewAnalysis }) => {
@@ -266,7 +268,7 @@ const StrategicIntelligenceBriefing = ({ analysisResults, brandName, onNewAnalys
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="executive" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
             Executive
@@ -290,6 +292,10 @@ const StrategicIntelligenceBriefing = ({ analysisResults, brandName, onNewAnalys
           <TabsTrigger value="visual" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             Visual
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Reports
           </TabsTrigger>
         </TabsList>
 
@@ -451,6 +457,17 @@ const StrategicIntelligenceBriefing = ({ analysisResults, brandName, onNewAnalys
               </p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-6">
+          <ReportGenerator
+            analysisResults={analysisResults}
+            brandName={brandName}
+            onReportGenerated={(result) => {
+              console.log('Report generated:', result);
+              // Handle report generation success
+            }}
+          />
         </TabsContent>
       </Tabs>
 
