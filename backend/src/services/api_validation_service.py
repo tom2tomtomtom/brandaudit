@@ -6,9 +6,10 @@ from typing import Dict, Optional, Tuple, Any, List
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 import json
-from .api_types import APIStatus, APIHealthInfo, APIValidationResult, SystemHealthMetrics
+from .api_types import APIStatus, APIHealthInfo, APIValidationResult, SystemHealthMetrics, CircuitBreakerState, CircuitBreakerInfo
 from .api_health_checkers import OpenRouterHealthChecker, NewsAPIHealthChecker, BrandFetchHealthChecker
 from .api_monitoring_service import api_monitor
+from .structured_logger import StructuredLogger, performance_logger, correlation_context
 
 
 @dataclass
@@ -30,11 +31,146 @@ class RateLimitInfo:
         return self.requests_made >= self.max_requests
 
 
+class CircuitBreaker:
+    """Enhanced circuit breaker with configurable thresholds and half-open state"""
+
+    def __init__(self, api_name: str, failure_threshold: int = 5, recovery_timeout: int = 300,
+                 half_open_max_calls: int = 3):
+        self.api_name = api_name
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout  # seconds
+        self.half_open_max_calls = half_open_max_calls
+
+        self.state = CircuitBreakerState.CLOSED
+        self.consecutive_failures = 0
+        self.consecutive_successes = 0
+        self.last_failure_time = None
+        self.last_success_time = None
+        self.next_attempt_time = None
+        self.half_open_calls = 0
+
+        self.logger = logging.getLogger(__name__)
+        self.structured_logger = StructuredLogger(f"{__name__}.CircuitBreaker")
+
+    def can_execute(self) -> bool:
+        """Check if a request can be executed based on circuit breaker state"""
+        now = datetime.utcnow()
+
+        if self.state == CircuitBreakerState.CLOSED:
+            return True
+
+        elif self.state == CircuitBreakerState.OPEN:
+            # Check if recovery timeout has passed
+            if self.next_attempt_time and now >= self.next_attempt_time:
+                self._transition_to_half_open()
+                return True
+            return False
+
+        elif self.state == CircuitBreakerState.HALF_OPEN:
+            # Allow limited calls in half-open state
+            return self.half_open_calls < self.half_open_max_calls
+
+        return False
+
+    def record_success(self):
+        """Record a successful operation"""
+        now = datetime.utcnow()
+        self.last_success_time = now
+        self.consecutive_failures = 0
+        self.consecutive_successes += 1
+
+        if self.state == CircuitBreakerState.HALF_OPEN:
+            self.half_open_calls += 1
+            if self.consecutive_successes >= self.half_open_max_calls:
+                self._transition_to_closed()
+                self.structured_logger.circuit_breaker_event(
+                    api_name=self.api_name,
+                    event="closed",
+                    state="closed",
+                    consecutive_successes=self.consecutive_successes,
+                    recovery_successful=True
+                )
+
+        elif self.state == CircuitBreakerState.CLOSED:
+            # Reset failure count on success
+            pass
+
+    def record_failure(self):
+        """Record a failed operation"""
+        now = datetime.utcnow()
+        self.last_failure_time = now
+        self.consecutive_failures += 1
+        self.consecutive_successes = 0
+
+        if self.state == CircuitBreakerState.HALF_OPEN:
+            # Failure in half-open state - go back to open
+            self._transition_to_open()
+            self.structured_logger.circuit_breaker_event(
+                api_name=self.api_name,
+                event="reopened",
+                state="open",
+                consecutive_failures=self.consecutive_failures,
+                reason="failure_in_half_open"
+            )
+
+        elif self.state == CircuitBreakerState.CLOSED:
+            # Check if we should open the circuit breaker
+            if self.consecutive_failures >= self.failure_threshold:
+                self._transition_to_open()
+                self.structured_logger.circuit_breaker_event(
+                    api_name=self.api_name,
+                    event="opened",
+                    state="open",
+                    consecutive_failures=self.consecutive_failures,
+                    failure_threshold=self.failure_threshold,
+                    reason="threshold_exceeded"
+                )
+
+    def _transition_to_open(self):
+        """Transition to open state"""
+        self.state = CircuitBreakerState.OPEN
+        self.next_attempt_time = datetime.utcnow() + timedelta(seconds=self.recovery_timeout)
+        self.half_open_calls = 0
+
+    def _transition_to_half_open(self):
+        """Transition to half-open state"""
+        self.state = CircuitBreakerState.HALF_OPEN
+        self.half_open_calls = 0
+        self.consecutive_successes = 0
+
+    def _transition_to_closed(self):
+        """Transition to closed state"""
+        self.state = CircuitBreakerState.CLOSED
+        self.consecutive_failures = 0
+        self.next_attempt_time = None
+        self.half_open_calls = 0
+
+    def get_info(self) -> CircuitBreakerInfo:
+        """Get current circuit breaker information"""
+        return CircuitBreakerInfo(
+            state=self.state,
+            failure_threshold=self.failure_threshold,
+            recovery_timeout=self.recovery_timeout,
+            half_open_max_calls=self.half_open_max_calls,
+            consecutive_failures=self.consecutive_failures,
+            consecutive_successes=self.consecutive_successes,
+            last_failure_time=self.last_failure_time,
+            last_success_time=self.last_success_time,
+            next_attempt_time=self.next_attempt_time
+        )
+
+    def reset(self):
+        """Reset circuit breaker to closed state"""
+        self.logger.info(f"Manually resetting circuit breaker for {self.api_name}")
+        self._transition_to_closed()
+
+
 class APIValidationService:
     """Comprehensive API validation and health monitoring service"""
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.structured_logger = StructuredLogger(__name__)
 
         # API configurations with enhanced rate limiting
         self.api_configs = {
@@ -72,12 +208,29 @@ class APIValidationService:
         self.health_status: Dict[str, APIHealthInfo] = {}
         self.initialize_health_status()
 
-        # Enhanced retry configuration
+        # Circuit breakers for each API
+        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self.initialize_circuit_breakers()
+
+        # Enhanced retry configuration with adaptive strategies
         self.max_retries = 3
         self.base_retry_delay = 1.0  # seconds
         self.max_retry_delay = 60.0  # seconds
         self.circuit_breaker_threshold = 5  # consecutive failures before circuit breaker
         self.circuit_breaker_timeout = timedelta(minutes=10)  # how long to wait before retry
+
+        # Adaptive retry configuration based on error types
+        self.retry_strategies = {
+            'timeout': {'max_retries': 5, 'base_delay': 2.0, 'backoff_multiplier': 1.5},
+            'connection': {'max_retries': 4, 'base_delay': 1.0, 'backoff_multiplier': 2.0},
+            'rate_limit': {'max_retries': 2, 'base_delay': 30.0, 'backoff_multiplier': 1.0},
+            'server_error': {'max_retries': 3, 'base_delay': 5.0, 'backoff_multiplier': 2.0},
+            'default': {'max_retries': 3, 'base_delay': 1.0, 'backoff_multiplier': 2.0}
+        }
+
+        # Jitter configuration for avoiding thundering herd
+        self.jitter_enabled = True
+        self.jitter_max_percent = 0.3  # 30% jitter
     
     def initialize_health_status(self):
         """Initialize health status for all APIs"""
@@ -86,6 +239,16 @@ class APIValidationService:
                 status=APIStatus.UNKNOWN,
                 response_time=0.0,
                 last_checked=datetime.utcnow()
+            )
+
+    def initialize_circuit_breakers(self):
+        """Initialize circuit breakers for all APIs"""
+        for api_name in self.api_configs.keys():
+            self.circuit_breakers[api_name] = CircuitBreaker(
+                api_name=api_name,
+                failure_threshold=self.circuit_breaker_threshold,
+                recovery_timeout=int(self.circuit_breaker_timeout.total_seconds()),
+                half_open_max_calls=3
             )
     
     def get_api_health(self, api_name: str) -> APIHealthInfo:
@@ -207,7 +370,12 @@ class APIValidationService:
                 current_health.consecutive_failures = 0
                 current_health.last_success = datetime.utcnow()
 
-                self.logger.info(f"API {api_name} health check passed - {response_time:.1f}ms")
+                self.structured_logger.health_check(
+                    component=api_name,
+                    status="healthy",
+                    response_time_ms=response_time,
+                    api_status=status.value
+                )
 
             elif response.status_code == 429:
                 current_health.status = APIStatus.RATE_LIMITED
@@ -313,21 +481,23 @@ class APIValidationService:
         return results
 
     def execute_with_retry(self, api_name: str, operation_func, *args, **kwargs):
-        """Execute an API operation with enhanced retry logic and validation"""
+        """Execute an API operation with enhanced adaptive retry logic and circuit breaker"""
+        # Get circuit breaker for this API
+        circuit_breaker = self.circuit_breakers.get(api_name)
+        if not circuit_breaker:
+            raise Exception(f"No circuit breaker configured for API: {api_name}")
+
+        # Check if circuit breaker allows execution
+        if not circuit_breaker.can_execute():
+            cb_info = circuit_breaker.get_info()
+            if cb_info.state == CircuitBreakerState.OPEN:
+                wait_time = (cb_info.next_attempt_time - datetime.utcnow()).total_seconds() if cb_info.next_attempt_time else 0
+                raise Exception(f"API {api_name} circuit breaker is OPEN. Next attempt in {wait_time:.0f} seconds")
+            else:
+                raise Exception(f"API {api_name} circuit breaker in {cb_info.state.value} state - cannot execute")
+
         # First check if API is available
         health = self.validate_api_connectivity(api_name)
-
-        if health.status == APIStatus.UNAVAILABLE:
-            # Check if circuit breaker should be reset
-            if (health.consecutive_failures >= self.circuit_breaker_threshold and
-                health.last_check and
-                datetime.utcnow() - health.last_check >= self.circuit_breaker_timeout):
-                self.logger.info(f"Attempting to reset circuit breaker for {api_name}")
-                health = self.validate_api_connectivity(api_name, force_check=True)
-                if health.status == APIStatus.UNAVAILABLE:
-                    raise Exception(f"API {api_name} is unavailable: {health.error_message}")
-            else:
-                raise Exception(f"API {api_name} is unavailable: {health.error_message}")
 
         if health.status == APIStatus.RATE_LIMITED:
             if health.rate_limit_reset:
@@ -335,11 +505,16 @@ class APIValidationService:
                 if wait_time > 0:
                     raise Exception(f"API {api_name} rate limited. Reset in {wait_time:.0f} seconds")
 
-        # Execute operation with enhanced retry logic
+        # Execute operation with enhanced adaptive retry logic
         last_exception = None
         config = self.api_configs[api_name]
+        error_type = 'default'
 
-        for attempt in range(self.max_retries):
+        # Determine retry strategy based on previous errors
+        retry_strategy = self.retry_strategies.get(error_type, self.retry_strategies['default'])
+        max_retries = retry_strategy['max_retries']
+
+        for attempt in range(max_retries):
             try:
                 # Check rate limits before each attempt
                 if config['rate_limit'].is_rate_limited() or config['daily_limit'].is_rate_limited():
@@ -357,6 +532,9 @@ class APIValidationService:
                 # Log successful operation
                 self.log_api_usage(api_name, operation_func.__name__, True, response_time)
 
+                # Record success in circuit breaker
+                circuit_breaker.record_success()
+
                 # Reset consecutive failures on success
                 self.health_status[api_name].consecutive_failures = 0
                 self.health_status[api_name].last_success = datetime.utcnow()
@@ -366,13 +544,17 @@ class APIValidationService:
 
             except requests.exceptions.Timeout as e:
                 last_exception = e
+                error_type = 'timeout'
                 error_msg = f"Request timeout after {config['timeout']}s"
+                circuit_breaker.record_failure()
                 self.health_status[api_name].consecutive_failures += 1
                 self.logger.warning(f"API {api_name} timeout on attempt {attempt + 1}: {error_msg}")
 
             except requests.exceptions.ConnectionError as e:
                 last_exception = e
+                error_type = 'connection'
                 error_msg = "Connection error - API unreachable"
+                circuit_breaker.record_failure()
                 self.health_status[api_name].consecutive_failures += 1
                 self.logger.warning(f"API {api_name} connection error on attempt {attempt + 1}: {error_msg}")
 
@@ -381,10 +563,17 @@ class APIValidationService:
 
                 # Check if it's a rate limit error
                 if "429" in error_msg or "rate limit" in error_msg.lower():
+                    error_type = 'rate_limit'
                     self.health_status[api_name].status = APIStatus.RATE_LIMITED
                     self.logger.warning(f"API {api_name} rate limited: {error_msg}")
                     self.log_api_usage(api_name, operation_func.__name__, False, None, error_msg)
-                    raise e  # Don't retry rate limit errors
+
+                    # For rate limits, wait longer before retry
+                    if attempt < max_retries - 1:
+                        delay = self._calculate_adaptive_delay(error_type, attempt)
+                        self.logger.info(f"Rate limited - waiting {delay:.1f} seconds before retry...")
+                        time.sleep(delay)
+                    continue
 
                 # Check if it's an authentication error
                 if "401" in error_msg or "403" in error_msg or "unauthorized" in error_msg.lower():
@@ -393,29 +582,103 @@ class APIValidationService:
                     self.log_api_usage(api_name, operation_func.__name__, False, None, error_msg)
                     raise e  # Don't retry auth errors
 
+                # Check if it's a server error
+                if "500" in error_msg or "502" in error_msg or "503" in error_msg or "504" in error_msg:
+                    error_type = 'server_error'
+
                 last_exception = e
+                circuit_breaker.record_failure()
                 self.health_status[api_name].consecutive_failures += 1
                 self.logger.warning(f"API {api_name} error on attempt {attempt + 1}: {error_msg}")
 
-            # Calculate exponential backoff with jitter
-            if attempt < self.max_retries - 1:
-                base_delay = self.base_retry_delay * (2 ** attempt)
-                jitter = base_delay * 0.1 * (0.5 - time.time() % 1)  # Add some randomness
-                delay = min(base_delay + jitter, self.max_retry_delay)
+            # Calculate adaptive delay with jitter
+            if attempt < max_retries - 1:
+                delay = self._calculate_adaptive_delay(error_type, attempt)
                 self.logger.info(f"Retrying {api_name} in {delay:.1f} seconds...")
                 time.sleep(delay)
 
         # All retries failed - log and update status
         final_error_msg = str(last_exception) if last_exception else "Unknown error"
         self.log_api_usage(api_name, operation_func.__name__, False, None, final_error_msg)
-        self.health_status[api_name].status = APIStatus.DEGRADED
 
-        # Check if we should open circuit breaker
-        if self.health_status[api_name].consecutive_failures >= self.circuit_breaker_threshold:
+        # Update health status based on circuit breaker state
+        cb_info = circuit_breaker.get_info()
+        if cb_info.state == CircuitBreakerState.OPEN:
             self.health_status[api_name].status = APIStatus.UNAVAILABLE
-            self.logger.error(f"Circuit breaker opened for {api_name} after {self.circuit_breaker_threshold} failures")
+        else:
+            self.health_status[api_name].status = APIStatus.DEGRADED
 
-        raise Exception(f"API {api_name} failed after {self.max_retries} attempts: {last_exception}")
+        raise Exception(f"API {api_name} failed after {max_retries} attempts: {last_exception}")
+
+    def _calculate_adaptive_delay(self, error_type: str, attempt: int) -> float:
+        """Calculate adaptive delay based on error type and attempt number"""
+        strategy = self.retry_strategies.get(error_type, self.retry_strategies['default'])
+
+        # Calculate base delay with exponential backoff
+        base_delay = strategy['base_delay'] * (strategy['backoff_multiplier'] ** attempt)
+
+        # Apply jitter if enabled
+        if self.jitter_enabled:
+            jitter_range = base_delay * self.jitter_max_percent
+            jitter = (time.time() % 1) * jitter_range * 2 - jitter_range  # Random jitter
+            base_delay += jitter
+
+        # Ensure delay doesn't exceed maximum
+        return min(base_delay, self.max_retry_delay)
+
+    def get_circuit_breaker_status(self, api_name: Optional[str] = None) -> Dict[str, Any]:
+        """Get circuit breaker status for one or all APIs"""
+        if api_name:
+            if api_name not in self.circuit_breakers:
+                return {"error": f"No circuit breaker found for API: {api_name}"}
+
+            cb_info = self.circuit_breakers[api_name].get_info()
+            return {
+                api_name: {
+                    "state": cb_info.state.value,
+                    "consecutive_failures": cb_info.consecutive_failures,
+                    "consecutive_successes": cb_info.consecutive_successes,
+                    "failure_threshold": cb_info.failure_threshold,
+                    "recovery_timeout": cb_info.recovery_timeout,
+                    "last_failure_time": cb_info.last_failure_time.isoformat() if cb_info.last_failure_time else None,
+                    "last_success_time": cb_info.last_success_time.isoformat() if cb_info.last_success_time else None,
+                    "next_attempt_time": cb_info.next_attempt_time.isoformat() if cb_info.next_attempt_time else None
+                }
+            }
+        else:
+            # Return status for all APIs
+            status = {}
+            for api_name, circuit_breaker in self.circuit_breakers.items():
+                cb_info = circuit_breaker.get_info()
+                status[api_name] = {
+                    "state": cb_info.state.value,
+                    "consecutive_failures": cb_info.consecutive_failures,
+                    "consecutive_successes": cb_info.consecutive_successes,
+                    "failure_threshold": cb_info.failure_threshold,
+                    "recovery_timeout": cb_info.recovery_timeout,
+                    "last_failure_time": cb_info.last_failure_time.isoformat() if cb_info.last_failure_time else None,
+                    "last_success_time": cb_info.last_success_time.isoformat() if cb_info.last_success_time else None,
+                    "next_attempt_time": cb_info.next_attempt_time.isoformat() if cb_info.next_attempt_time else None
+                }
+            return status
+
+    def reset_circuit_breaker(self, api_name: str) -> bool:
+        """Manually reset a circuit breaker"""
+        if api_name not in self.circuit_breakers:
+            self.logger.error(f"No circuit breaker found for API: {api_name}")
+            return False
+
+        self.circuit_breakers[api_name].reset()
+        self.health_status[api_name].consecutive_failures = 0
+        self.health_status[api_name].status = APIStatus.UNKNOWN  # Will be updated on next health check
+        return True
+
+    def reset_all_circuit_breakers(self) -> Dict[str, bool]:
+        """Reset all circuit breakers"""
+        results = {}
+        for api_name in self.circuit_breakers.keys():
+            results[api_name] = self.reset_circuit_breaker(api_name)
+        return results
 
     def is_api_available(self, api_name: str) -> bool:
         """Check if an API is currently available for use"""

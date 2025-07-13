@@ -377,8 +377,6 @@ class ApiService {
   }
 }
 
-}
-
 // Custom Error Classes
 class RateLimitError extends Error {
   constructor(message, retryAfter) {

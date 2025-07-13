@@ -181,15 +181,40 @@ class SimpleAnalyzer:
             analysis_storage[analysis_id]["progress"] = 70
             analysis_storage[analysis_id]["current_step"] = "Visual Brand Analysis"
 
-        # Step 4: Visual Analysis - ENHANCED WITH BRANDFETCH DATA
+        # Step 4: Visual Analysis - ENHANCED WITH BRANDFETCH DATA AND DATABASE INTEGRATION
         visual_result = {"error": "Visual analysis not available"}
         if self.visual_service and brand_result.get("success"):
             print("4️⃣ Getting visual analysis with Brandfetch integration...")
             try:
                 website_url = f"https://{brand_result.get('domain', 'example.com')}"
-                # Run async visual analysis with Brandfetch data
+
+                # Use robust visual analysis with comprehensive error handling
                 import asyncio
-                visual_result = asyncio.run(self.visual_service.analyze_brand_visuals(brand_name, website_url, brand_result))
+                visual_result = asyncio.run(self.visual_service.analyze_brand_visuals_with_fallback(brand_name, website_url, brand_result))
+
+                # Store visual assets in database for future retrieval
+                if analysis_id and not visual_result.get('error'):
+                    storage_result = asyncio.run(self.visual_service.store_visual_assets_in_database(
+                        brand_name, analysis_id, visual_result
+                    ))
+                    if storage_result.get('success'):
+                        print("   💾 Visual assets stored in database")
+                    else:
+                        print(f"   ⚠️ Database storage failed: {storage_result.get('errors', [])}")
+
+                # Optimize visual assets if optimization services are available
+                visual_assets = visual_result.get('visual_assets', {})
+                if visual_assets:
+                    optimization_result = asyncio.run(self.visual_service.optimize_visual_assets(visual_assets))
+                    if optimization_result.get('success'):
+                        visual_result['visual_assets'] = optimization_result['optimized_assets']
+                        visual_result['optimization_stats'] = optimization_result['optimization_stats']
+                        print(f"   🚀 Visual assets optimized: {optimization_result['optimization_stats']}")
+
+                # Report fallback strategies used
+                fallback_strategies = visual_result.get('fallback_strategies_used', [])
+                if fallback_strategies:
+                    print(f"   🔄 Fallback strategies used: {', '.join(fallback_strategies)}")
 
                 # Count visual assets found
                 visual_assets = visual_result.get('visual_assets', {})

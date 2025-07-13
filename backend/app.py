@@ -56,6 +56,17 @@ with app.app_context():
 websocket_service = init_websocket_service(socketio)
 print("✅ WebSocket service initialized")
 
+# Initialize comprehensive database health check system
+try:
+    from src.database.health_check_system import create_health_check_blueprint
+    health_bp = create_health_check_blueprint(app)
+    app.register_blueprint(health_bp, url_prefix='/api/db')
+    print("✅ Database health check endpoints registered at /api/db/health")
+except ImportError as e:
+    print(f"⚠️ Database health check system not available: {e}")
+except Exception as e:
+    print(f"⚠️ Failed to register database health endpoints: {e}")
+
 # Legacy in-memory storage (will be removed after migration)
 analysis_storage = {}
 

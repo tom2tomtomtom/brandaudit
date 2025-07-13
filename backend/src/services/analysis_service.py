@@ -1,5 +1,5 @@
 from src.extensions import db, cache
-from src.models.user import Analysis
+from src.models.user_model import Analysis
 from src.celery_app import celery
 from datetime import datetime
 

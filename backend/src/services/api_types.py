@@ -16,6 +16,27 @@ class APIStatus(Enum):
     UNKNOWN = "unknown"
 
 
+class CircuitBreakerState(Enum):
+    """Circuit breaker state enumeration"""
+    CLOSED = "closed"      # Normal operation
+    OPEN = "open"          # Circuit breaker is open, requests fail fast
+    HALF_OPEN = "half_open"  # Testing if service has recovered
+
+
+@dataclass
+class CircuitBreakerInfo:
+    """Circuit breaker state and configuration"""
+    state: CircuitBreakerState = CircuitBreakerState.CLOSED
+    failure_threshold: int = 5
+    recovery_timeout: int = 300  # seconds
+    half_open_max_calls: int = 3
+    consecutive_failures: int = 0
+    consecutive_successes: int = 0
+    last_failure_time: Optional[datetime] = None
+    last_success_time: Optional[datetime] = None
+    next_attempt_time: Optional[datetime] = None
+
+
 @dataclass
 class APIHealthInfo:
     """Information about API health status"""
@@ -26,16 +47,28 @@ class APIHealthInfo:
     rate_limit_reset: Optional[datetime] = None
     last_checked: datetime = field(default_factory=datetime.utcnow)
     additional_info: Dict[str, Any] = field(default_factory=dict)
+    # Enhanced circuit breaker information
+    consecutive_failures: int = 0
+    consecutive_successes: int = 0
+    last_success: Optional[datetime] = None
+    circuit_breaker: CircuitBreakerInfo = field(default_factory=CircuitBreakerInfo)
+    response_time_ms: float = 0.0
+    last_check: datetime = field(default_factory=datetime.utcnow)
 
 
 @dataclass
 class APIValidationResult:
-    """Result of API validation"""
+    """Result of API validation with enhanced circuit breaker support"""
     api_name: str
     is_valid: bool
     health_info: APIHealthInfo
     error_details: Optional[str] = None
     validation_timestamp: datetime = field(default_factory=datetime.utcnow)
+    # Enhanced circuit breaker functionality
+    circuit_breaker_triggered: bool = False
+    circuit_breaker_state: CircuitBreakerState = CircuitBreakerState.CLOSED
+    should_retry: bool = True
+    retry_after_seconds: Optional[int] = None
 
 
 @dataclass

@@ -1,0 +1,383 @@
+{
+  "validation_summary": {
+    "overall_status": "UNHEALTHY",
+    "total_tests": 29,
+    "passed": 19,
+    "failed": 8,
+    "warnings": 2,
+    "skipped": 0,
+    "total_duration_seconds": 10.467096,
+    "timestamp": "2025-07-13T09:22:38.539065"
+  },
+  "detailed_results": [
+    {
+      "service": "database_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized DatabaseService",
+      "execution_time": 0.49695706367492676,
+      "details": {
+        "module": "src.services.database_service",
+        "class": "DatabaseService"
+      }
+    },
+    {
+      "service": "api_validation_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized api_validator",
+      "execution_time": 0.09628105163574219,
+      "details": {
+        "module": "src.services.api_validation_service",
+        "class": "api_validator"
+      }
+    },
+    {
+      "service": "presentation_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized PresentationService",
+      "execution_time": 4.6554319858551025,
+      "details": {
+        "module": "src.services.presentation_service",
+        "class": "PresentationService"
+      }
+    },
+    {
+      "service": "visual_analysis_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized VisualAnalysisService",
+      "execution_time": 1.6460728645324707,
+      "details": {
+        "module": "src.services.visual_analysis_service",
+        "class": "VisualAnalysisService"
+      }
+    },
+    {
+      "service": "llm_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized LLMService",
+      "execution_time": 0.0008440017700195312,
+      "details": {
+        "module": "src.services.llm_service",
+        "class": "LLMService"
+      }
+    },
+    {
+      "service": "news_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized NewsService",
+      "execution_time": 0.0004611015319824219,
+      "details": {
+        "module": "src.services.news_service",
+        "class": "NewsService"
+      }
+    },
+    {
+      "service": "brand_data_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized BrandDataService",
+      "execution_time": 0.00025916099548339844,
+      "details": {
+        "module": "src.services.brand_data_service",
+        "class": "BrandDataService"
+      }
+    },
+    {
+      "service": "campaign_analysis_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized CampaignAnalysisService",
+      "execution_time": 0.0003941059112548828,
+      "details": {
+        "module": "src.services.campaign_analysis_service",
+        "class": "CampaignAnalysisService"
+      }
+    },
+    {
+      "service": "competitor_analysis_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized CompetitorAnalysisService",
+      "execution_time": 0.001374959945678711,
+      "details": {
+        "module": "src.services.competitor_analysis_service",
+        "class": "CompetitorAnalysisService"
+      }
+    },
+    {
+      "service": "strategic_synthesis_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized StrategicSynthesisService",
+      "execution_time": 0.00039076805114746094,
+      "details": {
+        "module": "src.services.strategic_synthesis_service",
+        "class": "StrategicSynthesisService"
+      }
+    },
+    {
+      "service": "async_analysis_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized AsyncAnalysisService",
+      "execution_time": 0.18462705612182617,
+      "details": {
+        "module": "src.services.async_analysis_service",
+        "class": "AsyncAnalysisService"
+      }
+    },
+    {
+      "service": "websocket_service",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Import succeeded but initialization failed: WebSocketService.__init__() missing 1 required positional argument: 'socketio'",
+      "execution_time": 0.11867713928222656,
+      "details": {
+        "error": "WebSocketService.__init__() missing 1 required positional argument: 'socketio'",
+        "module": "src.services.websocket_service"
+      }
+    },
+    {
+      "service": "health_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized HealthService",
+      "execution_time": 0.021763086318969727,
+      "details": {
+        "module": "src.services.health_service",
+        "class": "HealthService"
+      }
+    },
+    {
+      "service": "monitoring_service",
+      "status": "\u274c FAIL",
+      "message": "Import failed: cannot import name 'get_logger' from 'src.utils.logging_config' (/Users/thomasdowuona-hyde/brand-audit-app/backend/src/utils/logging_config.py)",
+      "execution_time": 0.0037622451782226562,
+      "details": {
+        "error": "cannot import name 'get_logger' from 'src.utils.logging_config' (/Users/thomasdowuona-hyde/brand-audit-app/backend/src/utils/logging_config.py)",
+        "module": "src.services.monitoring_service"
+      }
+    },
+    {
+      "service": "error_management_service",
+      "status": "\u274c FAIL",
+      "message": "Import failed: cannot import name 'get_logger' from 'src.utils.logging_config' (/Users/thomasdowuona-hyde/brand-audit-app/backend/src/utils/logging_config.py)",
+      "execution_time": 0.002527952194213867,
+      "details": {
+        "error": "cannot import name 'get_logger' from 'src.utils.logging_config' (/Users/thomasdowuona-hyde/brand-audit-app/backend/src/utils/logging_config.py)",
+        "module": "src.services.error_management_service"
+      }
+    },
+    {
+      "service": "intelligent_cache_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized IntelligentCacheService",
+      "execution_time": 8.106231689453125e-06,
+      "details": {
+        "module": "src.services.intelligent_cache_service",
+        "class": "IntelligentCacheService"
+      }
+    },
+    {
+      "service": "image_optimization_service",
+      "status": "\u274c FAIL",
+      "message": "Import failed: No module named 'aiofiles'",
+      "execution_time": 0.0005850791931152344,
+      "details": {
+        "error": "No module named 'aiofiles'",
+        "module": "src.services.image_optimization_service"
+      }
+    },
+    {
+      "service": "database_optimization_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized DatabaseOptimizationService",
+      "execution_time": 0.0018062591552734375,
+      "details": {
+        "module": "src.services.database_optimization_service",
+        "class": "DatabaseOptimizationService"
+      }
+    },
+    {
+      "service": "enhanced_retry_service",
+      "status": "\u274c FAIL",
+      "message": "Import failed: cannot import name 'get_logger' from 'src.utils.logging_config' (/Users/thomasdowuona-hyde/brand-audit-app/backend/src/utils/logging_config.py)",
+      "execution_time": 0.0014510154724121094,
+      "details": {
+        "error": "cannot import name 'get_logger' from 'src.utils.logging_config' (/Users/thomasdowuona-hyde/brand-audit-app/backend/src/utils/logging_config.py)",
+        "module": "src.services.enhanced_retry_service"
+      }
+    },
+    {
+      "service": "fallback_service",
+      "status": "\u274c FAIL",
+      "message": "Import failed: cannot import name 'get_logger' from 'src.utils.logging_config' (/Users/thomasdowuona-hyde/brand-audit-app/backend/src/utils/logging_config.py)",
+      "execution_time": 0.0015969276428222656,
+      "details": {
+        "error": "cannot import name 'get_logger' from 'src.utils.logging_config' (/Users/thomasdowuona-hyde/brand-audit-app/backend/src/utils/logging_config.py)",
+        "module": "src.services.fallback_service"
+      }
+    },
+    {
+      "service": "social_media_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized SocialMediaService",
+      "execution_time": 1.0967254638671875e-05,
+      "details": {
+        "module": "src.services.social_media_service",
+        "class": "SocialMediaService"
+      }
+    },
+    {
+      "service": "report_generation_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized ReportGenerationService",
+      "execution_time": 0.0022382736206054688,
+      "details": {
+        "module": "src.services.report_generation_service",
+        "class": "ReportGenerationService"
+      }
+    },
+    {
+      "service": "analysis_service",
+      "status": "\u274c FAIL",
+      "message": "Import failed: No module named 'src.models.user'",
+      "execution_time": 0.00043702125549316406,
+      "details": {
+        "error": "No module named 'src.models.user'",
+        "module": "src.services.analysis_service"
+      }
+    },
+    {
+      "service": "database_connectivity",
+      "status": "\u2705 PASS",
+      "message": "Database connection and model creation successful",
+      "execution_time": 0.02284693717956543,
+      "details": {
+        "database_stats": {
+          "total_analyses": 0,
+          "total_brands": 0,
+          "total_reports": 0,
+          "total_users": 0,
+          "completed_analyses": 0,
+          "failed_analyses": 0
+        },
+        "models_tested": [
+          "User",
+          "Analysis",
+          "Brand",
+          "Report"
+        ]
+      }
+    },
+    {
+      "service": "api_services",
+      "status": "\u274c FAIL",
+      "message": "API service validation failed: APIHealthInfo.__init__() got an unexpected keyword argument 'last_check'",
+      "execution_time": 7.700920104980469e-05,
+      "details": {
+        "error": "APIHealthInfo.__init__() got an unexpected keyword argument 'last_check'"
+      }
+    },
+    {
+      "service": "playwright_visual",
+      "status": "\u2705 PASS",
+      "message": "Playwright and visual analysis working. Browser title: Example Domain",
+      "execution_time": 3.1997921466827393,
+      "details": {
+        "browser_test": "success",
+        "page_title": "Example Domain",
+        "visual_capabilities": {
+          "screenshot_capture": true,
+          "color_extraction": true,
+          "image_processing": true,
+          "web_scraping": true,
+          "social_media_analysis": true
+        }
+      }
+    },
+    {
+      "service": "presentation_generation",
+      "status": "\u2705 PASS",
+      "message": "Presentation service operational. PDF: True, PPTX: True, HTML: True",
+      "execution_time": 0.00027108192443847656,
+      "details": {
+        "capabilities": {
+          "powerpoint_generation": true,
+          "pdf_generation": true,
+          "html_generation": true,
+          "chart_generation": true,
+          "multiple_templates": true,
+          "custom_themes": true,
+          "interactive_reports": true,
+          "visual_asset_integration": true
+        },
+        "pdf_available": true,
+        "pptx_available": true,
+        "html_available": true
+      }
+    },
+    {
+      "service": "async_capabilities",
+      "status": "\u274c FAIL",
+      "message": "Async analysis test failed: 'AsyncAnalysisService' object has no attribute 'get_capabilities'",
+      "execution_time": 0.0003218650817871094,
+      "details": {
+        "error": "'AsyncAnalysisService' object has no attribute 'get_capabilities'"
+      }
+    },
+    {
+      "service": "environment_config",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Missing required environment variables: OPENROUTER_API_KEY, NEWS_API_KEY, BRANDFETCH_API_KEY",
+      "execution_time": 7.867813110351562e-06,
+      "details": {
+        "env_status": {
+          "OPENROUTER_API_KEY": {
+            "present": false,
+            "length": 0,
+            "required": true
+          },
+          "NEWS_API_KEY": {
+            "present": false,
+            "length": 0,
+            "required": true
+          },
+          "BRANDFETCH_API_KEY": {
+            "present": false,
+            "length": 0,
+            "required": true
+          },
+          "OPENCORPORATES_API_KEY": {
+            "present": false,
+            "length": 0,
+            "required": false
+          },
+          "DATABASE_URL": {
+            "present": false,
+            "length": 0,
+            "required": false
+          },
+          "SECRET_KEY": {
+            "present": false,
+            "length": 0,
+            "required": false
+          },
+          "FLASK_ENV": {
+            "present": false,
+            "length": 0,
+            "required": false
+          }
+        },
+        "missing_required": [
+          "OPENROUTER_API_KEY",
+          "NEWS_API_KEY",
+          "BRANDFETCH_API_KEY"
+        ]
+      }
+    }
+  ],
+  "recommendations": [
+    "\ud83d\udd34 CRITICAL: Address failed services immediately before deployment",
+    "   - Install missing dependencies for monitoring_service",
+    "   - Install missing dependencies for error_management_service",
+    "   - Install missing dependencies for image_optimization_service",
+    "   - Install missing dependencies for enhanced_retry_service",
+    "   - Install missing dependencies for fallback_service",
+    "   - Install missing dependencies for analysis_service",
+    "\ud83d\udfe1 WARNINGS: Review and consider addressing these issues",
+    "   - Configure missing environment variables"
+  ]
+}

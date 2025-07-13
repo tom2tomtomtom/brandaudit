@@ -1,0 +1,370 @@
+{
+  "validation_summary": {
+    "overall_status": "UNHEALTHY",
+    "total_tests": 29,
+    "passed": 18,
+    "failed": 3,
+    "warnings": 8,
+    "skipped": 0,
+    "total_duration_seconds": 3.790667,
+    "timestamp": "2025-07-13T09:23:54.132431"
+  },
+  "detailed_results": [
+    {
+      "service": "database_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized DatabaseService",
+      "execution_time": 0.1851809024810791,
+      "details": {
+        "module": "src.services.database_service",
+        "class": "DatabaseService"
+      }
+    },
+    {
+      "service": "api_validation_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized api_validator",
+      "execution_time": 0.051882028579711914,
+      "details": {
+        "module": "src.services.api_validation_service",
+        "class": "api_validator"
+      }
+    },
+    {
+      "service": "presentation_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized PresentationService",
+      "execution_time": 1.4977550506591797,
+      "details": {
+        "module": "src.services.presentation_service",
+        "class": "PresentationService"
+      }
+    },
+    {
+      "service": "visual_analysis_service",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Import succeeded but initialization failed: name 'Any' is not defined",
+      "execution_time": 0.2923099994659424,
+      "details": {
+        "error": "name 'Any' is not defined",
+        "module": "src.services.visual_analysis_service"
+      }
+    },
+    {
+      "service": "llm_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized LLMService",
+      "execution_time": 0.00063323974609375,
+      "details": {
+        "module": "src.services.llm_service",
+        "class": "LLMService"
+      }
+    },
+    {
+      "service": "news_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized NewsService",
+      "execution_time": 0.0002529621124267578,
+      "details": {
+        "module": "src.services.news_service",
+        "class": "NewsService"
+      }
+    },
+    {
+      "service": "brand_data_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized BrandDataService",
+      "execution_time": 0.000247955322265625,
+      "details": {
+        "module": "src.services.brand_data_service",
+        "class": "BrandDataService"
+      }
+    },
+    {
+      "service": "campaign_analysis_service",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Import succeeded but initialization failed: name 'Any' is not defined",
+      "execution_time": 0.0007309913635253906,
+      "details": {
+        "error": "name 'Any' is not defined",
+        "module": "src.services.campaign_analysis_service"
+      }
+    },
+    {
+      "service": "competitor_analysis_service",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Import succeeded but initialization failed: name 'Any' is not defined",
+      "execution_time": 0.0013000965118408203,
+      "details": {
+        "error": "name 'Any' is not defined",
+        "module": "src.services.competitor_analysis_service"
+      }
+    },
+    {
+      "service": "strategic_synthesis_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized StrategicSynthesisService",
+      "execution_time": 0.00029087066650390625,
+      "details": {
+        "module": "src.services.strategic_synthesis_service",
+        "class": "StrategicSynthesisService"
+      }
+    },
+    {
+      "service": "async_analysis_service",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Import succeeded but initialization failed: unexpected indent (async_analysis_service.py, line 244)",
+      "execution_time": 0.0015001296997070312,
+      "details": {
+        "error": "unexpected indent (async_analysis_service.py, line 244)",
+        "module": "src.services.async_analysis_service"
+      }
+    },
+    {
+      "service": "websocket_service",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Import succeeded but initialization failed: WebSocketService.__init__() missing 1 required positional argument: 'socketio'",
+      "execution_time": 0.1116032600402832,
+      "details": {
+        "error": "WebSocketService.__init__() missing 1 required positional argument: 'socketio'",
+        "module": "src.services.websocket_service"
+      }
+    },
+    {
+      "service": "health_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized HealthService",
+      "execution_time": 0.011248111724853516,
+      "details": {
+        "module": "src.services.health_service",
+        "class": "HealthService"
+      }
+    },
+    {
+      "service": "monitoring_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized MonitoringService",
+      "execution_time": 0.002112150192260742,
+      "details": {
+        "module": "src.services.monitoring_service",
+        "class": "MonitoringService"
+      }
+    },
+    {
+      "service": "error_management_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized ErrorManagementService",
+      "execution_time": 0.0010752677917480469,
+      "details": {
+        "module": "src.services.error_management_service",
+        "class": "ErrorManagementService"
+      }
+    },
+    {
+      "service": "intelligent_cache_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized IntelligentCacheService",
+      "execution_time": 3.814697265625e-06,
+      "details": {
+        "module": "src.services.intelligent_cache_service",
+        "class": "IntelligentCacheService"
+      }
+    },
+    {
+      "service": "image_optimization_service",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Import succeeded but initialization failed: name 'Any' is not defined",
+      "execution_time": 0.0001068115234375,
+      "details": {
+        "error": "name 'Any' is not defined",
+        "module": "src.services.image_optimization_service"
+      }
+    },
+    {
+      "service": "database_optimization_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized DatabaseOptimizationService",
+      "execution_time": 0.0003349781036376953,
+      "details": {
+        "module": "src.services.database_optimization_service",
+        "class": "DatabaseOptimizationService"
+      }
+    },
+    {
+      "service": "enhanced_retry_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized EnhancedRetryService",
+      "execution_time": 0.0011441707611083984,
+      "details": {
+        "module": "src.services.enhanced_retry_service",
+        "class": "EnhancedRetryService"
+      }
+    },
+    {
+      "service": "fallback_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized FallbackService",
+      "execution_time": 0.0005598068237304688,
+      "details": {
+        "module": "src.services.fallback_service",
+        "class": "FallbackService"
+      }
+    },
+    {
+      "service": "social_media_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized SocialMediaService",
+      "execution_time": 0.026097774505615234,
+      "details": {
+        "module": "src.services.social_media_service",
+        "class": "SocialMediaService"
+      }
+    },
+    {
+      "service": "report_generation_service",
+      "status": "\u2705 PASS",
+      "message": "Successfully imported and initialized ReportGenerationService",
+      "execution_time": 0.0003299713134765625,
+      "details": {
+        "module": "src.services.report_generation_service",
+        "class": "ReportGenerationService"
+      }
+    },
+    {
+      "service": "analysis_service",
+      "status": "\u274c FAIL",
+      "message": "Import failed: No module named 'celery'",
+      "execution_time": 0.0010061264038085938,
+      "details": {
+        "error": "No module named 'celery'",
+        "module": "src.services.analysis_service"
+      }
+    },
+    {
+      "service": "database_connectivity",
+      "status": "\u2705 PASS",
+      "message": "Database connection and model creation successful",
+      "execution_time": 0.022598981857299805,
+      "details": {
+        "database_stats": {
+          "total_analyses": 0,
+          "total_brands": 0,
+          "total_reports": 0,
+          "total_users": 0,
+          "completed_analyses": 0,
+          "failed_analyses": 0
+        },
+        "models_tested": [
+          "User",
+          "Analysis",
+          "Brand",
+          "Report"
+        ]
+      }
+    },
+    {
+      "service": "api_services",
+      "status": "\u274c FAIL",
+      "message": "API service validation failed: APIHealthInfo.__init__() got an unexpected keyword argument 'last_check'",
+      "execution_time": 8.511543273925781e-05,
+      "details": {
+        "error": "APIHealthInfo.__init__() got an unexpected keyword argument 'last_check'"
+      }
+    },
+    {
+      "service": "playwright_visual",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Playwright available but test failed: name 'Any' is not defined",
+      "execution_time": 1.5769381523132324,
+      "details": {
+        "error": "name 'Any' is not defined"
+      }
+    },
+    {
+      "service": "presentation_generation",
+      "status": "\u2705 PASS",
+      "message": "Presentation service operational. PDF: True, PPTX: True, HTML: True",
+      "execution_time": 0.0002911090850830078,
+      "details": {
+        "capabilities": {
+          "powerpoint_generation": true,
+          "pdf_generation": true,
+          "html_generation": true,
+          "chart_generation": true,
+          "multiple_templates": true,
+          "custom_themes": true,
+          "interactive_reports": true,
+          "visual_asset_integration": true
+        },
+        "pdf_available": true,
+        "pptx_available": true,
+        "html_available": true
+      }
+    },
+    {
+      "service": "async_capabilities",
+      "status": "\u274c FAIL",
+      "message": "Async analysis test failed: unexpected indent (async_analysis_service.py, line 244)",
+      "execution_time": 0.0018680095672607422,
+      "details": {
+        "error": "unexpected indent (async_analysis_service.py, line 244)"
+      }
+    },
+    {
+      "service": "environment_config",
+      "status": "\u26a0\ufe0f WARNING",
+      "message": "Missing required environment variables: OPENROUTER_API_KEY, NEWS_API_KEY, BRANDFETCH_API_KEY",
+      "execution_time": 1.4066696166992188e-05,
+      "details": {
+        "env_status": {
+          "OPENROUTER_API_KEY": {
+            "present": false,
+            "length": 0,
+            "required": true
+          },
+          "NEWS_API_KEY": {
+            "present": false,
+            "length": 0,
+            "required": true
+          },
+          "BRANDFETCH_API_KEY": {
+            "present": false,
+            "length": 0,
+            "required": true
+          },
+          "OPENCORPORATES_API_KEY": {
+            "present": false,
+            "length": 0,
+            "required": false
+          },
+          "DATABASE_URL": {
+            "present": false,
+            "length": 0,
+            "required": false
+          },
+          "SECRET_KEY": {
+            "present": false,
+            "length": 0,
+            "required": false
+          },
+          "FLASK_ENV": {
+            "present": false,
+            "length": 0,
+            "required": false
+          }
+        },
+        "missing_required": [
+          "OPENROUTER_API_KEY",
+          "NEWS_API_KEY",
+          "BRANDFETCH_API_KEY"
+        ]
+      }
+    }
+  ],
+  "recommendations": [
+    "\ud83d\udd34 CRITICAL: Address failed services immediately before deployment",
+    "   - Install missing dependencies for analysis_service",
+    "\ud83d\udfe1 WARNINGS: Review and consider addressing these issues",
+    "   - Configure missing environment variables"
+  ]
+}

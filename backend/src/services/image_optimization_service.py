@@ -10,7 +10,7 @@ import logging
 from PIL import Image, ImageOps
 from io import BytesIO
 import hashlib
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Tuple, Optional, Union, Any
 from pathlib import Path
 import cv2
 import numpy as np

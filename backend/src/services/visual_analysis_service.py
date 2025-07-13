@@ -7,6 +7,7 @@ import os
 import json
 import asyncio
 import re
+import time
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 import logging
@@ -74,6 +75,16 @@ class VisualAnalysisService:
             self.social_service = SocialMediaService()
         else:
             self.social_service = None
+
+        # Initialize database service for visual asset storage
+        try:
+            from src.services.database_service import DatabaseService
+            self.db_service = DatabaseService()
+            self.database_available = True
+        except ImportError:
+            self.db_service = None
+            self.database_available = False
+            self.logger.warning("Database service not available - visual assets won't be stored in database")
     
     def ensure_assets_directory(self):
         """Create assets directory structure if it doesn't exist"""
@@ -2833,10 +2844,27 @@ class VisualAnalysisService:
             score += 10
 
         return min(100, score)
-    
+
     def calculate_logo_quality_score(self, logos: List[Dict[str, Any]]) -> int:
         """Calculate logo quality score"""
-        return 50 if logos else 0  # Placeholder implementation
+        if not logos:
+            return 0
+
+        # Calculate average quality score from detected logos
+        quality_scores = [logo.get('quality_score', 0) for logo in logos if 'quality_score' in logo]
+        if quality_scores:
+            avg_quality = sum(quality_scores) / len(quality_scores)
+            return int(avg_quality * 100)  # Convert to 0-100 scale
+
+        # Fallback scoring based on logo count and detection methods
+        score = min(50, len(logos) * 10)  # Base score from logo count
+
+        # Bonus for diverse detection methods
+        methods = set(logo.get('detection_method', 'unknown') for logo in logos)
+        if len(methods) > 1:
+            score += 20
+
+        return min(100, score)
     
     def calculate_content_quality_score(self, content: Dict[str, Any]) -> int:
         """Calculate content quality score"""
@@ -2902,3 +2930,534 @@ class VisualAnalysisService:
             return 60  # Minimal color palette
         else:
             return 0   # No colors found
+
+    async def store_visual_assets_in_database(self, brand_name: str, analysis_id: str, visual_results: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Store visual assets in database for persistence and future retrieval
+        Integrates with existing Brand and Analysis models
+        """
+        storage_result = {
+            'success': False,
+            'stored_assets': {},
+            'errors': [],
+            'database_available': self.database_available
+        }
+
+        if not self.database_available or not self.db_service:
+            storage_result['errors'].append("Database service not available")
+            return storage_result
+
+        try:
+            # Get or create brand record
+            brand_record = self.db_service.get_or_create_brand(brand_name)
+            if not brand_record:
+                storage_result['errors'].append("Failed to create/retrieve brand record")
+                return storage_result
+
+            # Get analysis record
+            analysis_record = self.db_service.get_analysis(analysis_id)
+            if not analysis_record:
+                storage_result['errors'].append("Analysis record not found")
+                return storage_result
+
+            # Store visual assets data in analysis results
+            visual_assets = visual_results.get('visual_assets', {})
+            visual_scores = visual_results.get('visual_scores', {})
+
+            # Update analysis with visual data
+            if analysis_record.results:
+                analysis_record.results.update({
+                    'visual_analysis': visual_results,
+                    'visual_assets': visual_assets,
+                    'visual_scores': visual_scores
+                })
+            else:
+                analysis_record.results = {
+                    'visual_analysis': visual_results,
+                    'visual_assets': visual_assets,
+                    'visual_scores': visual_scores
+                }
+
+            # Update brand record with visual information
+            if 'color_palette' in visual_assets:
+                colors = visual_assets['color_palette'].get('primary_colors', [])
+                if colors and len(colors) > 0:
+                    # Store primary color in brand record
+                    primary_color = colors[0]
+                    if isinstance(primary_color, dict) and 'hex' in primary_color:
+                        brand_record.primary_color = primary_color['hex']
+                    elif isinstance(primary_color, str):
+                        brand_record.primary_color = primary_color
+
+            # Store logo URL if available
+            if 'logos' in visual_assets:
+                logos = visual_assets['logos']
+                if logos and len(logos) > 0:
+                    logo = logos[0]
+                    if isinstance(logo, dict) and 'filename' in logo:
+                        brand_record.logo_url = logo['filename']
+                    elif isinstance(logo, str):
+                        brand_record.logo_url = logo
+
+            # Save changes to database
+            self.db_service.save_analysis(analysis_record)
+            self.db_service.save_brand(brand_record)
+
+            storage_result['success'] = True
+            storage_result['stored_assets'] = {
+                'brand_id': brand_record.id,
+                'analysis_id': analysis_record.id,
+                'visual_assets_count': len(visual_assets),
+                'visual_scores_count': len(visual_scores),
+                'primary_color_stored': bool(brand_record.primary_color),
+                'logo_url_stored': bool(brand_record.logo_url)
+            }
+
+            self.logger.info(f"Visual assets stored in database for {brand_name}")
+
+        except Exception as e:
+            error_msg = f"Database storage failed: {str(e)}"
+            self.logger.error(error_msg)
+            storage_result['errors'].append(error_msg)
+
+        return storage_result
+
+    async def retrieve_visual_assets_from_database(self, brand_name: str, analysis_id: str = None) -> Dict[str, Any]:
+        """
+        Retrieve stored visual assets from database
+        Can retrieve by brand name or specific analysis ID
+        """
+        retrieval_result = {
+            'success': False,
+            'visual_assets': {},
+            'visual_scores': {},
+            'brand_info': {},
+            'errors': [],
+            'database_available': self.database_available
+        }
+
+        if not self.database_available or not self.db_service:
+            retrieval_result['errors'].append("Database service not available")
+            return retrieval_result
+
+        try:
+            if analysis_id:
+                # Retrieve specific analysis
+                analysis_record = self.db_service.get_analysis(analysis_id)
+                if not analysis_record:
+                    retrieval_result['errors'].append("Analysis record not found")
+                    return retrieval_result
+
+                if analysis_record.results:
+                    visual_analysis = analysis_record.results.get('visual_analysis', {})
+                    retrieval_result['visual_assets'] = visual_analysis.get('visual_assets', {})
+                    retrieval_result['visual_scores'] = visual_analysis.get('visual_scores', {})
+
+                # Get brand info
+                brand_record = self.db_service.get_brand_by_id(analysis_record.brand_id)
+                if brand_record:
+                    retrieval_result['brand_info'] = {
+                        'name': brand_record.name,
+                        'website': brand_record.website,
+                        'primary_color': brand_record.primary_color,
+                        'logo_url': brand_record.logo_url,
+                        'industry': brand_record.industry
+                    }
+
+            else:
+                # Retrieve latest analysis for brand
+                brand_record = self.db_service.get_brand_by_name(brand_name)
+                if not brand_record:
+                    retrieval_result['errors'].append("Brand record not found")
+                    return retrieval_result
+
+                # Get latest analysis for this brand
+                latest_analysis = self.db_service.get_latest_analysis_for_brand(brand_record.id)
+                if latest_analysis and latest_analysis.results:
+                    visual_analysis = latest_analysis.results.get('visual_analysis', {})
+                    retrieval_result['visual_assets'] = visual_analysis.get('visual_assets', {})
+                    retrieval_result['visual_scores'] = visual_analysis.get('visual_scores', {})
+
+                retrieval_result['brand_info'] = {
+                    'name': brand_record.name,
+                    'website': brand_record.website,
+                    'primary_color': brand_record.primary_color,
+                    'logo_url': brand_record.logo_url,
+                    'industry': brand_record.industry
+                }
+
+            retrieval_result['success'] = True
+            self.logger.info(f"Visual assets retrieved from database for {brand_name}")
+
+        except Exception as e:
+            error_msg = f"Database retrieval failed: {str(e)}"
+            self.logger.error(error_msg)
+            retrieval_result['errors'].append(error_msg)
+
+        return retrieval_result
+
+    async def get_cached_visual_analysis(self, brand_name: str, website_url: str) -> Dict[str, Any]:
+        """
+        Get cached visual analysis if available, otherwise perform new analysis
+        Integrates with intelligent cache service if available
+        """
+        cache_key = f"visual_analysis_{brand_name}_{hash(website_url)}"
+
+        # Try to get from cache first
+        if OPTIMIZATION_SERVICES_AVAILABLE:
+            try:
+                cached_result = intelligent_cache.get(cache_key)
+                if cached_result:
+                    self.logger.info(f"Retrieved cached visual analysis for {brand_name}")
+                    cached_result['cache_hit'] = True
+                    return cached_result
+            except Exception as e:
+                self.logger.warning(f"Cache retrieval failed: {e}")
+
+        # No cache hit, perform new analysis
+        self.logger.info(f"Performing new visual analysis for {brand_name}")
+        result = await self.analyze_brand_visuals(brand_name, website_url)
+        result['cache_hit'] = False
+
+        # Store in cache for future use
+        if OPTIMIZATION_SERVICES_AVAILABLE and not result.get('errors'):
+            try:
+                # Cache for 24 hours
+                intelligent_cache.set(cache_key, result, ttl=86400)
+                self.logger.info(f"Cached visual analysis for {brand_name}")
+            except Exception as e:
+                self.logger.warning(f"Cache storage failed: {e}")
+
+        return result
+
+    async def optimize_visual_assets(self, visual_assets: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Optimize visual assets using image optimization service if available
+        """
+        optimization_result = {
+            'success': False,
+            'optimized_assets': {},
+            'optimization_stats': {},
+            'errors': []
+        }
+
+        if not OPTIMIZATION_SERVICES_AVAILABLE:
+            optimization_result['errors'].append("Optimization services not available")
+            return optimization_result
+
+        try:
+            optimized_assets = {}
+            optimization_stats = {
+                'screenshots_optimized': 0,
+                'logos_optimized': 0,
+                'total_size_reduction': 0,
+                'optimization_time': 0
+            }
+
+            start_time = time.time()
+
+            # Optimize screenshots
+            screenshots = visual_assets.get('screenshots', {})
+            if isinstance(screenshots, dict):
+                optimized_screenshots = {}
+
+                # Handle nested screenshot structure
+                if 'screenshots' in screenshots:
+                    screenshot_paths = screenshots['screenshots']
+                else:
+                    screenshot_paths = screenshots
+
+                for name, path in screenshot_paths.items():
+                    if isinstance(path, str) and path.startswith('/static/'):
+                        try:
+                            # Convert to absolute path
+                            abs_path = path.replace('/static/', 'src/static/')
+                            if os.path.exists(abs_path):
+                                optimized_path = await image_optimization_service.optimize_image(
+                                    abs_path,
+                                    quality=85,
+                                    max_width=1920
+                                )
+                                if optimized_path:
+                                    optimized_screenshots[name] = optimized_path.replace('src/static/', '/static/')
+                                    optimization_stats['screenshots_optimized'] += 1
+                                else:
+                                    optimized_screenshots[name] = path
+                            else:
+                                optimized_screenshots[name] = path
+                        except Exception as e:
+                            self.logger.warning(f"Screenshot optimization failed for {name}: {e}")
+                            optimized_screenshots[name] = path
+
+                optimized_assets['screenshots'] = optimized_screenshots
+
+            # Optimize logos
+            logos = visual_assets.get('logos', [])
+            if isinstance(logos, list):
+                optimized_logos = []
+
+                for logo in logos:
+                    if isinstance(logo, dict) and 'filename' in logo:
+                        logo_path = logo['filename']
+                        if isinstance(logo_path, str) and logo_path.startswith('/static/'):
+                            try:
+                                abs_path = logo_path.replace('/static/', 'src/static/')
+                                if os.path.exists(abs_path):
+                                    optimized_path = await image_optimization_service.optimize_image(
+                                        abs_path,
+                                        quality=90,
+                                        max_width=500
+                                    )
+                                    if optimized_path:
+                                        logo_copy = logo.copy()
+                                        logo_copy['filename'] = optimized_path.replace('src/static/', '/static/')
+                                        logo_copy['optimized'] = True
+                                        optimized_logos.append(logo_copy)
+                                        optimization_stats['logos_optimized'] += 1
+                                    else:
+                                        optimized_logos.append(logo)
+                                else:
+                                    optimized_logos.append(logo)
+                            except Exception as e:
+                                self.logger.warning(f"Logo optimization failed: {e}")
+                                optimized_logos.append(logo)
+                        else:
+                            optimized_logos.append(logo)
+                    else:
+                        optimized_logos.append(logo)
+
+                optimized_assets['logos'] = optimized_logos
+
+            # Copy other assets without modification
+            for key, value in visual_assets.items():
+                if key not in ['screenshots', 'logos']:
+                    optimized_assets[key] = value
+
+            optimization_stats['optimization_time'] = time.time() - start_time
+
+            optimization_result['success'] = True
+            optimization_result['optimized_assets'] = optimized_assets
+            optimization_result['optimization_stats'] = optimization_stats
+
+            self.logger.info(f"Visual asset optimization completed: {optimization_stats}")
+
+        except Exception as e:
+            error_msg = f"Visual asset optimization failed: {str(e)}"
+            self.logger.error(error_msg)
+            optimization_result['errors'].append(error_msg)
+
+        return optimization_result
+
+    async def analyze_brand_visuals_with_fallback(self, brand_name: str, website_url: str, brand_data: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        Enhanced visual analysis with comprehensive error handling and fallback strategies
+        Ensures robust operation even when some components fail
+        """
+        self.logger.info(f"Starting robust visual analysis for {brand_name}")
+
+        results = {
+            'brand_name': brand_name,
+            'website_url': website_url,
+            'analysis_timestamp': datetime.now().isoformat(),
+            'capabilities_used': self.get_capabilities(),
+            'visual_assets': {},
+            'visual_scores': {},
+            'fallback_strategies_used': [],
+            'errors': [],
+            'warnings': []
+        }
+
+        # Strategy 1: Try full analysis first
+        try:
+            full_result = await self.analyze_brand_visuals(brand_name, website_url, brand_data)
+            if not full_result.get('errors') or len(full_result.get('errors', [])) < 3:
+                # Full analysis succeeded or had minimal errors
+                return full_result
+            else:
+                # Full analysis had significant errors, continue with fallback strategies
+                results['warnings'].append("Full analysis had errors, using fallback strategies")
+                results['errors'].extend(full_result.get('errors', []))
+        except Exception as e:
+            results['errors'].append(f"Full analysis failed: {str(e)}")
+            results['warnings'].append("Using fallback strategies due to full analysis failure")
+
+        # Strategy 2: Try individual components with error isolation
+        await self._analyze_with_component_isolation(brand_name, website_url, brand_data, results)
+
+        # Strategy 3: Use cached or database data if available
+        await self._use_cached_or_stored_data(brand_name, results)
+
+        # Strategy 4: Generate minimal analysis from available data
+        await self._generate_minimal_analysis(brand_name, website_url, brand_data, results)
+
+        # Calculate final scores based on available data
+        results['visual_scores']['overall_visual_score'] = self.calculate_overall_visual_score(results['visual_scores'])
+
+        self.logger.info(f"Robust visual analysis completed for {brand_name} with {len(results['fallback_strategies_used'])} fallback strategies")
+        return results
+
+    async def _analyze_with_component_isolation(self, brand_name: str, website_url: str, brand_data: Dict[str, Any], results: Dict[str, Any]):
+        """Analyze individual components with error isolation"""
+
+        # Component 1: Screenshot capture (most critical)
+        try:
+            if PLAYWRIGHT_AVAILABLE:
+                screenshots = await self.capture_website_screenshots(website_url, brand_name)
+                if screenshots and not screenshots.get('error'):
+                    results['visual_assets']['screenshots'] = screenshots
+                    results['fallback_strategies_used'].append('isolated_screenshot_capture')
+                    self.logger.info("Screenshot capture succeeded in isolation")
+        except Exception as e:
+            results['errors'].append(f"Isolated screenshot capture failed: {str(e)}")
+
+        # Component 2: Brandfetch integration (if available)
+        try:
+            if brand_data and not brand_data.get('error'):
+                # Extract Brandfetch data safely
+                if brand_data.get('logos'):
+                    results['visual_assets']['logos'] = brand_data['logos']
+                    results['visual_scores']['logo_availability'] = 100
+                    results['fallback_strategies_used'].append('brandfetch_logo_extraction')
+
+                if brand_data.get('colors'):
+                    results['visual_assets']['color_palette'] = {
+                        'primary_colors': brand_data['colors'],
+                        'source': 'brandfetch'
+                    }
+                    results['visual_scores']['color_consistency'] = self.calculate_color_consistency_score_from_brandfetch(brand_data['colors'])
+                    results['fallback_strategies_used'].append('brandfetch_color_extraction')
+
+                if brand_data.get('fonts'):
+                    results['visual_assets']['fonts'] = brand_data['fonts']
+                    results['visual_scores']['typography_consistency'] = 85
+                    results['fallback_strategies_used'].append('brandfetch_font_extraction')
+
+                self.logger.info("Brandfetch data integration succeeded in isolation")
+        except Exception as e:
+            results['errors'].append(f"Isolated Brandfetch integration failed: {str(e)}")
+
+        # Component 3: Color analysis (if screenshots available)
+        try:
+            if VISUAL_PROCESSING_AVAILABLE and 'screenshots' in results['visual_assets']:
+                colors = await self.extract_brand_colors(results['visual_assets']['screenshots'])
+                if colors and not colors.get('error'):
+                    # Merge with existing color data if available
+                    existing_colors = results['visual_assets'].get('color_palette', {})
+                    if existing_colors:
+                        # Combine colors from different sources
+                        combined_colors = self._merge_color_data(existing_colors, colors)
+                        results['visual_assets']['color_palette'] = combined_colors
+                    else:
+                        results['visual_assets']['color_palette'] = colors
+
+                    results['visual_scores']['color_consistency'] = self.calculate_color_consistency_score(colors)
+                    results['fallback_strategies_used'].append('isolated_color_analysis')
+                    self.logger.info("Color analysis succeeded in isolation")
+        except Exception as e:
+            results['errors'].append(f"Isolated color analysis failed: {str(e)}")
+
+        # Component 4: Basic web content analysis
+        try:
+            if WEB_SCRAPING_AVAILABLE:
+                content_analysis = await self.analyze_website_content(website_url)
+                if content_analysis:
+                    results['visual_assets']['content_analysis'] = content_analysis
+                    results['visual_scores']['content_quality'] = self.calculate_content_quality_score(content_analysis)
+                    results['fallback_strategies_used'].append('isolated_content_analysis')
+                    self.logger.info("Content analysis succeeded in isolation")
+        except Exception as e:
+            results['errors'].append(f"Isolated content analysis failed: {str(e)}")
+
+    async def _use_cached_or_stored_data(self, brand_name: str, results: Dict[str, Any]):
+        """Try to use cached or stored data as fallback"""
+
+        # Try database retrieval
+        try:
+            stored_data = await self.retrieve_visual_assets_from_database(brand_name)
+            if stored_data.get('success') and stored_data.get('visual_assets'):
+                # Merge stored data with current results
+                stored_assets = stored_data['visual_assets']
+                stored_scores = stored_data.get('visual_scores', {})
+
+                for key, value in stored_assets.items():
+                    if key not in results['visual_assets'] and value:
+                        results['visual_assets'][key] = value
+                        results['fallback_strategies_used'].append(f'database_{key}')
+
+                for key, value in stored_scores.items():
+                    if key not in results['visual_scores'] and value:
+                        results['visual_scores'][key] = value
+
+                self.logger.info("Used stored database data as fallback")
+        except Exception as e:
+            results['errors'].append(f"Database fallback failed: {str(e)}")
+
+        # Try cache retrieval (if different from database)
+        if OPTIMIZATION_SERVICES_AVAILABLE:
+            try:
+                cache_key = f"visual_analysis_fallback_{brand_name}"
+                cached_result = intelligent_cache.get(cache_key)
+                if cached_result and cached_result.get('visual_assets'):
+                    cached_assets = cached_result['visual_assets']
+
+                    for key, value in cached_assets.items():
+                        if key not in results['visual_assets'] and value:
+                            results['visual_assets'][key] = value
+                            results['fallback_strategies_used'].append(f'cache_{key}')
+
+                    self.logger.info("Used cached data as fallback")
+            except Exception as e:
+                results['errors'].append(f"Cache fallback failed: {str(e)}")
+
+    async def _generate_minimal_analysis(self, brand_name: str, website_url: str, brand_data: Dict[str, Any], results: Dict[str, Any]):
+        """Generate minimal analysis from whatever data is available"""
+
+        # Ensure we have at least basic structure
+        if 'visual_assets' not in results:
+            results['visual_assets'] = {}
+        if 'visual_scores' not in results:
+            results['visual_scores'] = {}
+
+        # Generate basic scores based on available data
+        asset_count = len(results['visual_assets'])
+        if asset_count > 0:
+            results['visual_scores']['data_availability'] = min(100, asset_count * 25)
+            results['fallback_strategies_used'].append('minimal_scoring')
+
+        # Add basic metadata
+        results['visual_assets']['analysis_metadata'] = {
+            'brand_name': brand_name,
+            'website_url': website_url,
+            'analysis_type': 'fallback_analysis',
+            'components_analyzed': list(results['visual_assets'].keys()),
+            'fallback_strategies': results['fallback_strategies_used']
+        }
+
+        self.logger.info(f"Generated minimal analysis with {asset_count} visual assets")
+
+    def _merge_color_data(self, existing_colors: Dict[str, Any], new_colors: Dict[str, Any]) -> Dict[str, Any]:
+        """Merge color data from different sources"""
+        merged = existing_colors.copy()
+
+        # Merge primary colors
+        existing_primary = existing_colors.get('primary_colors', [])
+        new_primary = new_colors.get('primary_colors', [])
+
+        # Combine and deduplicate colors
+        all_colors = existing_primary + new_primary
+        unique_colors = []
+        seen_colors = set()
+
+        for color in all_colors:
+            color_key = color.get('hex', str(color)) if isinstance(color, dict) else str(color)
+            if color_key not in seen_colors:
+                unique_colors.append(color)
+                seen_colors.add(color_key)
+
+        merged['primary_colors'] = unique_colors[:10]  # Limit to top 10
+        merged['sources'] = list(set([
+            existing_colors.get('source', 'unknown'),
+            new_colors.get('source', 'unknown')
+        ]))
+
+        return merged

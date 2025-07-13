@@ -17,6 +17,8 @@ from src.services.brand_data_service import BrandDataService
 from src.services.visual_analysis_service import VisualAnalysisService
 from src.services.campaign_analysis_service import CampaignAnalysisService
 
+import os
+
 
 class AsyncAnalysisService:
     """
@@ -238,6 +240,18 @@ class AsyncAnalysisService:
         if hasattr(self, 'thread_pool'):
             self.thread_pool.shutdown(wait=False)
 
+    def get_capabilities(self) -> Dict[str, bool]:
+        """Return available async analysis capabilities"""
+        return {
+            'concurrent_processing': True,
+            'async_llm_calls': bool(os.environ.get('OPENROUTER_API_KEY')),
+            'async_news_search': bool(os.environ.get('NEWS_API_KEY')),
+            'async_brand_data': bool(os.environ.get('BRANDFETCH_API_KEY')),
+            'async_visual_analysis': True,
+            'progress_tracking': True
+        }
+
 
 # Global instance
 async_analysis_service = AsyncAnalysisService()
+

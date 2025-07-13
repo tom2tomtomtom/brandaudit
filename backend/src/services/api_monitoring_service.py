@@ -3,9 +3,13 @@ import json
 import os
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from collections import defaultdict, deque
+from threading import Thread, Event
+import threading
+import queue
 from .api_validation_service import APIStatus, APIHealthInfo
+from .structured_logger import StructuredLogger, correlation_context
 
 
 @dataclass
@@ -20,6 +24,108 @@ class APIMetrics:
     uptime_percentage: float = 100.0
     last_downtime: Optional[datetime] = None
     downtime_duration_minutes: float = 0.0
+
+
+@dataclass
+class RealTimeMetric:
+    """Real-time metric data point"""
+    timestamp: datetime
+    api_name: str
+    metric_type: str  # 'request', 'response_time', 'error', 'health_check'
+    value: float
+    success: bool
+    additional_data: Dict[str, Any] = field(default_factory=dict)
+
+
+class RealTimeMetricsCollector:
+    """Collects and manages real-time metrics"""
+
+    def __init__(self, max_metrics: int = 1000):
+        self.max_metrics = max_metrics
+        self.metrics: deque = deque(maxlen=max_metrics)
+        self.metrics_lock = threading.Lock()
+        self.subscribers: List[queue.Queue] = []
+        self.subscribers_lock = threading.Lock()
+
+    def add_metric(self, metric: RealTimeMetric):
+        """Add a new metric and notify subscribers"""
+        with self.metrics_lock:
+            self.metrics.append(metric)
+
+        # Notify all subscribers
+        with self.subscribers_lock:
+            dead_subscribers = []
+            for subscriber_queue in self.subscribers:
+                try:
+                    subscriber_queue.put_nowait(metric)
+                except queue.Full:
+                    # Remove full queues (dead subscribers)
+                    dead_subscribers.append(subscriber_queue)
+
+            # Clean up dead subscribers
+            for dead_sub in dead_subscribers:
+                self.subscribers.remove(dead_sub)
+
+    def subscribe(self) -> queue.Queue:
+        """Subscribe to real-time metrics updates"""
+        subscriber_queue = queue.Queue(maxsize=100)
+        with self.subscribers_lock:
+            self.subscribers.append(subscriber_queue)
+        return subscriber_queue
+
+    def unsubscribe(self, subscriber_queue: queue.Queue):
+        """Unsubscribe from real-time metrics updates"""
+        with self.subscribers_lock:
+            if subscriber_queue in self.subscribers:
+                self.subscribers.remove(subscriber_queue)
+
+    def get_recent_metrics(self, api_name: Optional[str] = None,
+                          metric_type: Optional[str] = None,
+                          since: Optional[datetime] = None) -> List[RealTimeMetric]:
+        """Get recent metrics with optional filtering"""
+        with self.metrics_lock:
+            filtered_metrics = []
+            for metric in self.metrics:
+                if api_name and metric.api_name != api_name:
+                    continue
+                if metric_type and metric.metric_type != metric_type:
+                    continue
+                if since and metric.timestamp < since:
+                    continue
+                filtered_metrics.append(metric)
+            return filtered_metrics
+
+    def get_metrics_summary(self, window_minutes: int = 5) -> Dict[str, Any]:
+        """Get summary of metrics for the specified time window"""
+        cutoff_time = datetime.utcnow() - timedelta(minutes=window_minutes)
+        recent_metrics = self.get_recent_metrics(since=cutoff_time)
+
+        summary = {
+            'window_minutes': window_minutes,
+            'total_metrics': len(recent_metrics),
+            'by_api': defaultdict(lambda: {'requests': 0, 'errors': 0, 'avg_response_time': 0}),
+            'by_type': defaultdict(int)
+        }
+
+        response_times = defaultdict(list)
+
+        for metric in recent_metrics:
+            summary['by_type'][metric.metric_type] += 1
+            api_stats = summary['by_api'][metric.api_name]
+
+            if metric.metric_type == 'request':
+                api_stats['requests'] += 1
+                if not metric.success:
+                    api_stats['errors'] += 1
+            elif metric.metric_type == 'response_time':
+                response_times[metric.api_name].append(metric.value)
+
+        # Calculate average response times
+        for api_name, times in response_times.items():
+            if times:
+                summary['by_api'][api_name]['avg_response_time'] = sum(times) / len(times)
+
+        return dict(summary)
 
 
 class APIMonitoringService:
@@ -45,6 +151,13 @@ class APIMonitoringService:
             'consecutive_failures': 5,
             'downtime_minutes': 10
         }
+
+        # Real-time metrics collector
+        self.real_time_collector = RealTimeMetricsCollector()
+
+        # Enhanced alerting
+        self.alert_callbacks: List[callable] = []
+        self.alert_history: deque = deque(maxlen=1000)
     
     def setup_logging(self):
         """Setup structured logging for API monitoring"""
@@ -54,6 +167,7 @@ class APIMonitoringService:
         # Create logger
         self.logger = logging.getLogger('api_monitoring')
         self.logger.setLevel(logging.INFO)
+        self.structured_logger = StructuredLogger('api_monitoring')
         
         # Remove existing handlers to avoid duplicates
         for handler in self.logger.handlers[:]:
@@ -79,11 +193,11 @@ class APIMonitoringService:
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
     
-    def log_api_request(self, api_name: str, operation: str, success: bool, 
+    def log_api_request(self, api_name: str, operation: str, success: bool,
                        response_time_ms: Optional[float] = None, error_message: Optional[str] = None):
-        """Log an API request with structured data"""
+        """Log an API request with enhanced structured data"""
         timestamp = datetime.utcnow()
-        
+
         # Create structured log entry
         log_entry = {
             'timestamp': timestamp.isoformat(),
@@ -93,20 +207,49 @@ class APIMonitoringService:
             'response_time_ms': response_time_ms,
             'error_message': error_message
         }
-        
+
         # Add to request history
         self.request_history[api_name].append(log_entry)
-        
+
         # Update metrics
         self.update_metrics(api_name, success, response_time_ms)
-        
-        # Log to file
-        log_message = f"API_REQUEST | {json.dumps(log_entry, default=str)}"
-        if success:
-            self.logger.info(log_message)
-        else:
-            self.logger.warning(log_message)
-        
+
+        # Use structured logging
+        self.structured_logger.api_request(
+            api_name=api_name,
+            operation=operation,
+            success=success,
+            response_time_ms=response_time_ms,
+            error_message=error_message,
+            event_type='api_request',
+            metrics_updated=True
+        )
+
+        # Add to real-time metrics
+        self.real_time_collector.add_metric(RealTimeMetric(
+            timestamp=timestamp,
+            api_name=api_name,
+            metric_type='request',
+            value=1.0,
+            success=success,
+            additional_data={
+                'operation': operation,
+                'response_time_ms': response_time_ms,
+                'error_message': error_message
+            }
+        ))
+
+        # Add response time metric if available
+        if response_time_ms is not None:
+            self.real_time_collector.add_metric(RealTimeMetric(
+                timestamp=timestamp,
+                api_name=api_name,
+                metric_type='response_time',
+                value=response_time_ms,
+                success=success,
+                additional_data={'operation': operation}
+            ))
+
         # Check for alerts
         self.check_alerts(api_name)
     
@@ -198,25 +341,35 @@ class APIMonitoringService:
         metrics = self.api_metrics[api_name]
         
         # Check response time alert
-        if (self.response_times[api_name] and 
+        if (self.response_times[api_name] and
             metrics.avg_response_time_ms > self.alert_thresholds['response_time_ms']):
-            self.logger.warning(
-                f"ALERT | High response time for {api_name}: {metrics.avg_response_time_ms:.1f}ms"
+            self._trigger_alert(
+                alert_type='high_response_time',
+                api_name=api_name,
+                message=f"High response time: {metrics.avg_response_time_ms:.1f}ms",
+                severity='warning'
             )
-        
+
         # Check failure rate alert
         if metrics.total_requests >= 10:  # Only check after sufficient requests
             failure_rate = metrics.failed_requests / metrics.total_requests
             if failure_rate > self.alert_thresholds['failure_rate_threshold']:
-                self.logger.error(
-                    f"ALERT | High failure rate for {api_name}: {failure_rate:.1%}"
+                self._trigger_alert(
+                    alert_type='high_failure_rate',
+                    api_name=api_name,
+                    message=f"High failure rate: {failure_rate:.1%}",
+                    severity='error'
                 )
-        
+
         # Check downtime alert
-        if (metrics.last_downtime and 
+        if (metrics.last_downtime and
             (datetime.utcnow() - metrics.last_downtime).total_seconds() / 60 > self.alert_thresholds['downtime_minutes']):
-            self.logger.error(
-                f"ALERT | Extended downtime for {api_name}: {(datetime.utcnow() - metrics.last_downtime).total_seconds() / 60:.1f} minutes"
+            downtime_minutes = (datetime.utcnow() - metrics.last_downtime).total_seconds() / 60
+            self._trigger_alert(
+                alert_type='extended_downtime',
+                api_name=api_name,
+                message=f"Extended downtime: {downtime_minutes:.1f} minutes",
+                severity='error'
             )
     
     def get_api_metrics(self, api_name: str) -> Dict[str, Any]:
@@ -281,6 +434,116 @@ class APIMonitoringService:
             alerts.append(f"Extended downtime: {downtime_minutes:.1f} minutes")
         
         return alerts
+
+    def subscribe_to_real_time_metrics(self) -> queue.Queue:
+        """Subscribe to real-time metrics updates"""
+        return self.real_time_collector.subscribe()
+
+    def unsubscribe_from_real_time_metrics(self, subscriber_queue: queue.Queue):
+        """Unsubscribe from real-time metrics updates"""
+        self.real_time_collector.unsubscribe(subscriber_queue)
+
+    def get_real_time_metrics_summary(self, window_minutes: int = 5) -> Dict[str, Any]:
+        """Get real-time metrics summary"""
+        return self.real_time_collector.get_metrics_summary(window_minutes)
+
+    def get_recent_metrics(self, api_name: Optional[str] = None,
+                          metric_type: Optional[str] = None,
+                          minutes_back: int = 5) -> List[Dict[str, Any]]:
+        """Get recent metrics in serializable format"""
+        since = datetime.utcnow() - timedelta(minutes=minutes_back)
+        metrics = self.real_time_collector.get_recent_metrics(api_name, metric_type, since)
+
+        return [
+            {
+                'timestamp': metric.timestamp.isoformat(),
+                'api_name': metric.api_name,
+                'metric_type': metric.metric_type,
+                'value': metric.value,
+                'success': metric.success,
+                'additional_data': metric.additional_data
+            }
+            for metric in metrics
+        ]
+
+    def add_alert_callback(self, callback: callable):
+        """Add callback for alert notifications"""
+        self.alert_callbacks.append(callback)
+
+    def remove_alert_callback(self, callback: callable):
+        """Remove alert callback"""
+        if callback in self.alert_callbacks:
+            self.alert_callbacks.remove(callback)
+
+    def _trigger_alert(self, alert_type: str, api_name: str, message: str, severity: str = 'warning'):
+        """Trigger an alert and notify callbacks"""
+        alert = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'type': alert_type,
+            'api_name': api_name,
+            'message': message,
+            'severity': severity
+        }
+
+        # Add to alert history
+        self.alert_history.append(alert)
+
+        # Notify callbacks
+        for callback in self.alert_callbacks:
+            try:
+                callback(alert)
+            except Exception as e:
+                self.structured_logger.error(
+                    f"Alert callback failed: {e}",
+                    alert_type=alert_type,
+                    api_name=api_name,
+                    callback_error=str(e)
+                )
+
+    def get_alert_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get recent alert history"""
+        return list(self.alert_history)[-limit:]
+
+    def get_live_dashboard_data(self) -> Dict[str, Any]:
+        """Get comprehensive live dashboard data"""
+        return {
+            'timestamp': datetime.utcnow().isoformat(),
+            'real_time_summary': self.get_real_time_metrics_summary(5),
+            'api_metrics': self.get_all_metrics(),
+            'recent_alerts': self.get_alert_history(10),
+            'system_status': self._get_system_status_summary()
+        }
+
+    def _get_system_status_summary(self) -> Dict[str, Any]:
+        """Get system status summary for dashboard"""
+        all_metrics = self.get_all_metrics()
+
+        total_apis = len(all_metrics)
+        healthy_apis = 0
+        degraded_apis = 0
+
+        for api_name, data in all_metrics.items():
+            health_summary = data.get('health_status_summary', {})
+            current_status = health_summary.get('current_status', 'unknown')
+
+            if current_status == 'healthy':
+                healthy_apis += 1
+            elif current_status in ['degraded', 'rate_limited']:
+                degraded_apis += 1
+
+        overall_health = 'healthy'
+        if healthy_apis == 0:
+            overall_health = 'critical'
+        elif degraded_apis > 0:
+            overall_health = 'degraded'
+
+        return {
+            'overall_health': overall_health,
+            'total_apis': total_apis,
+            'healthy_apis': healthy_apis,
+            'degraded_apis': degraded_apis,
+            'critical_apis': total_apis - healthy_apis - degraded_apis
+        }
 
 
 # Global instance
