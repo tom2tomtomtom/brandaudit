@@ -410,48 +410,4 @@ const ReportGenerator = ({ analysisResults, brandName, onReportGenerated }) => {
   );
 };
 
-      {/* Generated Reports */}
-      {Object.keys(generatedReports).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              Generated Reports
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Object.entries(generatedReports).map(([format, reportData]) => {
-                const formatInfo = formats.find(f => f.id === format || format.includes(f.id));
-                return (
-                  <div key={format} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {formatInfo && <formatInfo.icon className="h-5 w-5" />}
-                      <div>
-                        <div className="font-medium">{reportData.filename}</div>
-                        <div className="text-sm text-gray-600">
-                          {reportData.file_size ? `${Math.round(reportData.file_size / 1024)} KB` : 'Ready'}
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => downloadReport(reportData, format)}
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
-
 export default ReportGenerator;

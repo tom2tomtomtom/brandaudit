@@ -22,7 +22,7 @@ import {
   ThumbsDown,
   RefreshCw,
   Sparkles,
-  Robot,
+  Bot,
   BookOpen,
   Filter
 } from 'lucide-react'
@@ -386,7 +386,7 @@ const AIInsightsEngine = ({ data, brandName, onInsightAction }) => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Robot className="h-5 w-5 text-blue-600" />
+            <Bot className="h-5 w-5 text-blue-600" />
             AI Analytics Assistant
           </CardTitle>
         </CardHeader>

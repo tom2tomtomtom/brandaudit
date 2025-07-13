@@ -9,7 +9,7 @@ class NewsService:
     """Service for integrating with news APIs"""
 
     def __init__(self):
-        self.newsapi_key = os.getenv("NEWSAPI_KEY")
+        self.newsapi_key = os.getenv("NEWS_API_KEY")
         self.newsapi_base_url = "https://newsapi.org/v2"
         self.eodhd_api_key = os.getenv("EODHD_API_KEY")
         self.eodhd_base_url = "https://eodhistoricaldata.com/api"

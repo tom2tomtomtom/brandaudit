@@ -794,3 +794,19 @@ class ErrorManagementService:
 
 # Global instance
 error_manager = ErrorManagementService()
+
+# Alias for backward compatibility
+ErrorManager = ErrorManagementService
+
+# Export list
+__all__ = [
+    'ErrorManagementService',
+    'ErrorManager',
+    'error_manager',
+    'ErrorCategory',
+    'ErrorSeverity',
+    'RecoveryStrategy',
+    'ErrorContext',
+    'ErrorInfo',
+    'FallbackStrategy'
+]

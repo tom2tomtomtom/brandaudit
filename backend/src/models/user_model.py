@@ -6,11 +6,15 @@ from src.extensions import db
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Export list
+__all__ = ['User', 'Brand', 'Analysis', 'Report', 'UploadedFile']
+
 
 class User(db.Model):
     """User model with authentication and security features"""
 
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}
 
     # Primary key
     id = db.Column(db.String(36), primary_key=True)  # UUID
@@ -117,6 +121,7 @@ class Brand(db.Model):
     """Brand model for storing brand information"""
 
     __tablename__ = "brands"
+    __table_args__ = {'extend_existing': True}
 
     # Primary key
     id = db.Column(db.String(36), primary_key=True)  # UUID
@@ -166,6 +171,7 @@ class Analysis(db.Model):
     """Analysis model for storing brand audit results"""
 
     __tablename__ = "analyses"
+    __table_args__ = {'extend_existing': True}
 
     # Primary key
     id = db.Column(db.String(36), primary_key=True)  # UUID
@@ -253,6 +259,7 @@ class Report(db.Model):
     """Report model for storing generated reports"""
 
     __tablename__ = "reports"
+    __table_args__ = {'extend_existing': True}
 
     # Primary key
     id = db.Column(db.String(36), primary_key=True)  # UUID
@@ -329,6 +336,7 @@ class UploadedFile(db.Model):
     """Model for tracking uploaded files"""
 
     __tablename__ = "uploaded_files"
+    __table_args__ = {'extend_existing': True}
 
     # Primary key
     id = db.Column(db.String(36), primary_key=True)  # UUID

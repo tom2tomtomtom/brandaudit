@@ -208,16 +208,16 @@ class APIValidationService:
         self.health_status: Dict[str, APIHealthInfo] = {}
         self.initialize_health_status()
 
-        # Circuit breakers for each API
-        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
-        self.initialize_circuit_breakers()
-
         # Enhanced retry configuration with adaptive strategies
         self.max_retries = 3
         self.base_retry_delay = 1.0  # seconds
         self.max_retry_delay = 60.0  # seconds
         self.circuit_breaker_threshold = 5  # consecutive failures before circuit breaker
         self.circuit_breaker_timeout = timedelta(minutes=10)  # how long to wait before retry
+
+        # Circuit breakers for each API
+        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self.initialize_circuit_breakers()
 
         # Adaptive retry configuration based on error types
         self.retry_strategies = {
